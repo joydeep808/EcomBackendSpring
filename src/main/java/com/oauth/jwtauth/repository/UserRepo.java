@@ -6,4 +6,6 @@ import com.oauth.jwtauth.entity.UserEntity;
 public interface UserRepo extends JpaRepository<UserEntity , Object>{
   UserEntity findByUsername(String username);
   UserEntity findByEmail(String email);
+  UserEntity findByRole(String role);
+  UserEntity findByUsernameAndEmail(String username , String email);
 }

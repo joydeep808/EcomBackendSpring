@@ -8,8 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class LoginDto {
-  private String username;
+  private String email;
   @NotEmpty(message = "Password is required for login ")
   private String password;
-
 }
