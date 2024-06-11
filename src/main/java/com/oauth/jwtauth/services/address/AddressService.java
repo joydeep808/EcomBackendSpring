@@ -26,6 +26,7 @@ public class AddressService {
   private AddressRepo addressRespo;
   @Autowired
   private UserRepo userRepo;
+
   public ReqRes createAddress(HttpServletRequest httpServletRequest , CreateAddressDto createAddressDto) {
     ReqRes response = new ReqRes();
     try {
@@ -82,29 +83,30 @@ public class AddressService {
       return response;
     }
   }
-  // public ReqRes getAddress(HttpServletRequest request) {
-  //   ReqRes response = new ReqRes();
-  //   try {
-  //     Long id = (long) jwtInterceptor.getIdFromJwt(request);
-  //    List<Address> addresses =  addressRespo.findAddressFromUserId(id);
-  //    if (addresses == null || addresses.size() == 0) {
-  //     response.setStatusCode(404);
-  //     response.setMessage("No address found please add one");
-  //     return response;
-  //    }
-  //    response.setStatusCode(200);
-  //    response.setMessage("Address found");
-  //    response.setData(addresses);
-  //    response.setIsSuccess(true);
-  //    return response;
+  public ReqRes getAddress(HttpServletRequest request) {
+    ReqRes response = new ReqRes();
+    try {
+      Long id = (long) jwtInterceptor.getIdFromJwt(request);
+      
+     List<Address> addresses =  addressRespo.findAddressFromUserId(id);
+     if (addresses == null || addresses.size() == 0) {
+      response.setStatusCode(404);
+      response.setMessage("No address found please add one");
+      return response;
+     }
+     response.setStatusCode(200);
+     response.setMessage("Address found");
+     response.setData(addresses);
+     response.setIsSuccess(true);
+     return response;
      
-  //   } catch (Exception e) {
-  //     response.setStatusCode(500);
-  //     response.setMessage(e.getMessage());
-  //     response.setError(e.getLocalizedMessage());
-  //     return response;
-  //   }
-  // }
+    } catch (Exception e) {
+      response.setStatusCode(500);
+      response.setMessage(e.getMessage());
+      response.setError(e.getLocalizedMessage());
+      return response;
+    }
+  }
 
   
 }

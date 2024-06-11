@@ -9,11 +9,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import com.oauth.jwtauth.services.user.UserServiceDetails;
+import com.oauth.jwtauth.services.user.UserDetailsServiceImpl;
 @Component
 public class SecurityBeanInjector {
   @Autowired(required = true)
-  private UserServiceDetails userServiceDetails;
+  private UserDetailsServiceImpl userServiceDetails;
   @Bean
   public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
       return authenticationConfiguration.getAuthenticationManager(); //providerManager implements AuthenticationManager

@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.oauth.jwtauth.dto.ReqRes;
 import com.oauth.jwtauth.dto.UpdateDto;
+import com.oauth.jwtauth.dto.userdto.CustomUserDto;
 import com.oauth.jwtauth.entity.UserEntity;
 import com.oauth.jwtauth.repository.UserRepo;
 import com.oauth.jwtauth.util.JwtInterceptor;
@@ -28,8 +29,10 @@ public class UserInfo {
 
   public ReqRes getOwnInfo(HttpServletRequest httpServletRequest){
     ReqRes response = new ReqRes();
+
    try {
-    var email =  jwtInterceptor.getEmailFromJwt(httpServletRequest);
+     String email =  jwtInterceptor.getEmailFromJwt(httpServletRequest);
+     
     if (email.equals(null)) {
       response.setStatusCode(401);
       response.setMessage("Please login");
@@ -42,10 +45,14 @@ public class UserInfo {
        response.setStatusCode(404);
     }
     else{
+      
+      // ObjectMapper objectMapper = new ObjectMapper();
+      // String userJson = objectMapper.writeValueAsString(user); 
+      // redisService.saveWithExpires(user.getEmail(),userJson , 60);
       response.setMessage("User found");
       response.setStatusCode(200);
-      response.setUser(user);
- 
+      response.setData(user);
+      response.setIsSuccess(true);
     }
    } catch (Exception e) {
     response.setError(e.getMessage());
@@ -143,10 +150,5 @@ public class UserInfo {
     res.setUser(user);
     }
     return res;
-
   }
-
-
-
-
 }

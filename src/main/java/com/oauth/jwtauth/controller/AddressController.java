@@ -32,8 +32,8 @@ public class AddressController {
   public ResponseEntity<ReqRes> updateAddress(HttpServletRequest httpServletRequest , @RequestBody CreateAddressDto createAddressDto){
     return ResponseEntity.ok(addressService.updateAddress(httpServletRequest, createAddressDto));
   }
-  // @GetMapping("/get")
-  // public ResponseEntity<ReqRes> getAddress(HttpServletRequest request){
-  //   return ResponseEntity.ok(addressService.getAddress(request));
-  // }
+  @GetMapping("/get")
+  public ResponseEntity<ReqRes> getAddress(HttpServletRequest request){
+    return ResponseEntity.ok(addressService.getAddress(request));
+  }
 }
