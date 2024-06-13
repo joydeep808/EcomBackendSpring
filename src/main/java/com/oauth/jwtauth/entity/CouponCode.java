@@ -6,6 +6,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.oauth.jwtauth.entity.enumentity.DiscountType;
 
@@ -33,7 +34,11 @@ public class CouponCode {
   @Size(min = 6 , max =  20 , message = "couponCode should be within 6-20 digits")
   private String couponCode;
   @NotNull(message = "Start Date is required")
+  @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+
   private LocalDateTime startDate;
+@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+
   @NotNull(message = "End Date is required")
   private LocalDateTime endDate;
   @NotNull(message = "Stock should not be null")
@@ -48,8 +53,12 @@ public class CouponCode {
   @JsonIgnore
   private Category category;
   @CreatedDate
+@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+
   private LocalDateTime createdAt;
   @LastModifiedDate
+@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+
   private LocalDateTime updatedAt;
   public CouponCode(){
     this.isPaused = false;

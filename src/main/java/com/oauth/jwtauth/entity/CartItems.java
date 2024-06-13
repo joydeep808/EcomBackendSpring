@@ -6,6 +6,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -23,9 +24,13 @@ public class CartItems {
   @ManyToOne(cascade = CascadeType.ALL)
   private Products product;
   private int quantity;
+  @JsonFormat(pattern = "yyyy-MM-dd")
+
   @CreatedDate
   private LocalDateTime createdAt;
   @LastModifiedDate
+@JsonFormat(pattern = "yyyy-MM-dd")
+
   private LocalDateTime updatedAt;
   public CartItems(){
     this.createdAt = LocalDateTime.now();

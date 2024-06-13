@@ -3,8 +3,11 @@ package com.oauth.jwtauth.services.cart;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.oauth.jwtauth.dto.ReqRes;
 import com.oauth.jwtauth.dto.cartitems.CreateCartItemsDto;
 import com.oauth.jwtauth.entity.Cart;
@@ -13,6 +16,8 @@ import com.oauth.jwtauth.entity.Products;
 import com.oauth.jwtauth.repository.CartItemsRepo;
 import com.oauth.jwtauth.repository.CartRepo;
 import com.oauth.jwtauth.repository.ProductRepo;
+import com.oauth.jwtauth.services.kafka.KafkaService;
+import com.oauth.jwtauth.services.redis.RedisService;
 import com.oauth.jwtauth.util.JwtInterceptor;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,6 +32,11 @@ public class CartService {
   private ProductRepo productRepo;
   @Autowired 
   private CartItemsRepo cartItemsRepo;
+  @Autowired
+  private RedisService redisService;
+  @Autowired(required = true)
+  private KafkaService kafkaService;
+
   public ReqRes addProductInCart(HttpServletRequest httpServletRequest  , CreateCartItemsDto cartItemsDto) {
     ReqRes response = new ReqRes();
     try {
@@ -42,12 +52,14 @@ public class CartService {
       response.setStatusCode(400);
       return response;
      }
+     kafkaService.sendMessage("cart_topic" , product.get());
      Long user =  (long) jwtInterceptor.getIdFromJwt(httpServletRequest);
      if (user.equals(null)) {
       response.setMessage("Please Login");
       response.setStatusCode(401);
       return response;
      }
+
      Cart cart = cartRepo.findByUser(user);
      boolean isAlreadyThere  = cart.getCartItems().stream().filter(p-> p.getProduct().getId() == cartItemsDto.getProductId()).findFirst().map(p-> {p.setQuantity(p.getQuantity() + 1);
      return true;}).orElse(false);
@@ -88,4 +100,38 @@ public class CartService {
    return response;
 
   }
+
+  public ReqRes getCartInfo(HttpServletRequest httpServletRequest){
+    ReqRes response = new ReqRes();
+    try {
+     Long id   = (long) jwtInterceptor.getIdFromJwt(httpServletRequest);
+    Object CacheCartInfo =  redisService.getData("CART"+id, Object.class);
+    if (CacheCartInfo != null) {
+      response.setStatusCode(200);
+      response.setMessage("Cart Products found from redis");
+      response.setData(CacheCartInfo);
+      response.setIsSuccess(true);
+      return response;
+    }
+    Cart cartinfo =  cartRepo.findByUser(id);
+    if (cartinfo == null || cartinfo.getCartItems().isEmpty() || cartinfo.getCartItems().size() == 0) {
+      response.setMessage("Empty Cart");
+      response.setStatusCode(400);
+      return response;
+    }
+    
+    redisService.saveInSingleQuery("CART"+id, cartinfo.getCartItems(), 20);
+    response.setIsSuccess(true);
+    response.setMessage("Cart Details found Successfully done");
+    response.setStatusCode(200);
+    response.setData(cartinfo.getCartItems());
+    return response;
+
+    } catch (Exception e) {
+      response.setMessage(e.getMessage());
+      response.setStatusCode(500);
+      return response;
+    }
+  }
+
 }

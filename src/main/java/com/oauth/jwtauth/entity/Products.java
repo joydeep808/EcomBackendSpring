@@ -5,6 +5,8 @@ import java.util.List;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -36,8 +38,11 @@ public class Products {
   private String color;
   @NotNull(message = "Stock should not be null")
   private Long stock;
+  
+@JsonFormat(pattern = "yyyy-MM-dd")
   @CreatedDate
   private LocalDateTime createdAt;
+@JsonFormat(pattern = "yyyy-MM-dd")
   @LastModifiedDate
   private LocalDateTime updatedAt;
   public Products(){

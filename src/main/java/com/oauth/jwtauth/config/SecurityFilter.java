@@ -27,6 +27,7 @@ public class SecurityFilter {
     String categoryMappingUrl = "/api/v1/category";
     String OrderMapping = "/api/v1/order";
     String AddressMapping = "/api/v1/address";
+    String CartMapping = "/api/v1/cart/";
     httpSecurity
     .csrf(csrf->csrf.disable()).sessionManagement(sess-> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS)).authenticationProvider(authenticationProvider).addFilterBefore(jwtConfig, UsernamePasswordAuthenticationFilter.class).authorizeHttpRequests(authConfig -> {
                     authConfig.requestMatchers(defaultUrl+"/" ,
@@ -58,8 +59,9 @@ public class SecurityFilter {
                     ProductMappingUrl+"/p/{name}" , 
                      ProductMappingUrl+"/{id}",
                      ProductMappingUrl+"/p/{name}" ,
-                     "/api/v1/cart/add" ,
-                     "/api/v1/cart/delete" ,
+                     CartMapping+"add" ,
+                     CartMapping+"delete" ,
+                     CartMapping+"get",
                      AddressMapping+"/create",
                      AddressMapping+"/update",
                      AddressMapping+"/get",

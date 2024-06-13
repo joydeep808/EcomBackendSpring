@@ -3,6 +3,7 @@ import java.time.LocalDateTime;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.oauth.jwtauth.entity.enumentity.OrderStatus;
 import com.oauth.jwtauth.entity.enumentity.PaymentType;
 
@@ -24,7 +25,11 @@ public class Order {
   @JoinColumn(name = "addressId")
   @JsonBackReference
   private Address addressId;
+  @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+
   private LocalDateTime expectedDeleveryDate;
+@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+
   private LocalDateTime deleveryDate;
   
   
@@ -43,7 +48,11 @@ public class Order {
 
   // date
   @CreatedDate
+@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+
   private LocalDateTime createdAt;
+@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+
   @LastModifiedDate
   private LocalDateTime updatedAt;
   public Order(){

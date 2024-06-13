@@ -1,8 +1,5 @@
 package com.oauth.jwtauth.dto.userdto;
 
-import org.postgresql.translation.messages_it;
-
-import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data

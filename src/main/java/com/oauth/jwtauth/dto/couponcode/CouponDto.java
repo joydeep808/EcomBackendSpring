@@ -2,6 +2,7 @@ package com.oauth.jwtauth.dto.couponcode;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.oauth.jwtauth.entity.enumentity.DiscountType;
 
 import jakarta.validation.constraints.NotNull;
@@ -11,6 +12,8 @@ public class CouponDto  {
   @NotNull(message = "Coupon code")
   private String couponCode;
   @NotNull(message = "Start Date is required")
+
+@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
   private LocalDateTime startDate;
   @NotNull(message = "End Date is required")
   private LocalDateTime endDate;

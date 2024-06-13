@@ -7,6 +7,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.oauth.jwtauth.entity.enumentity.UserStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -40,7 +42,11 @@ public class UserEntity implements UserDetails {
     private long otpExpires;
     private UserStatus status;
     @CreatedDate
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+
     private LocalDateTime createdAt;
+@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+
     @LastModifiedDate
     private LocalDateTime updatedAt;
 

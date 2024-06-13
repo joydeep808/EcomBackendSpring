@@ -12,7 +12,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.oauth.jwtauth.dto.ReqRes;
 import com.oauth.jwtauth.dto.UpdateDto;
-import com.oauth.jwtauth.dto.userdto.CustomUserDto;
 import com.oauth.jwtauth.entity.UserEntity;
 import com.oauth.jwtauth.repository.UserRepo;
 import com.oauth.jwtauth.util.JwtInterceptor;
@@ -37,7 +36,6 @@ public class UserInfo {
       response.setStatusCode(401);
       response.setMessage("Please login");
       return response;
-      
     }
     UserEntity user = userRepo.findByEmail(email);
     if (user.equals(null) || user == null ) {
@@ -45,10 +43,6 @@ public class UserInfo {
        response.setStatusCode(404);
     }
     else{
-      
-      // ObjectMapper objectMapper = new ObjectMapper();
-      // String userJson = objectMapper.writeValueAsString(user); 
-      // redisService.saveWithExpires(user.getEmail(),userJson , 60);
       response.setMessage("User found");
       response.setStatusCode(200);
       response.setData(user);

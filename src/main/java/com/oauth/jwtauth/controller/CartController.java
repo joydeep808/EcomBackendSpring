@@ -2,6 +2,7 @@ package com.oauth.jwtauth.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,7 +27,11 @@ public class CartController {
   public ResponseEntity<ReqRes> addProducts(HttpServletRequest httpServletRequest , @RequestBody CreateCartItemsDto cartItemsDto) throws Exception{
     return ResponseEntity.ok(cartService.addProductInCart(httpServletRequest ,cartItemsDto));
   }
-  @GetMapping("/delete")
+  @GetMapping("/get")
+  public ResponseEntity<ReqRes> getCartProducts(HttpServletRequest httpServletRequest){
+    return ResponseEntity.ok(cartService.getCartInfo(httpServletRequest));
+  }
+  @DeleteMapping("/delete")
   public ResponseEntity<ReqRes> deleteCartItems(HttpServletRequest httpServletRequest) throws Exception{
     return ResponseEntity.ok(cartService.removeProductFromCart(httpServletRequest));
   }
