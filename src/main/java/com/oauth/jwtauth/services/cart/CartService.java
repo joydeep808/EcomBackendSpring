@@ -1,21 +1,15 @@
 package com.oauth.jwtauth.services.cart;
 
-import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.oauth.jwtauth.dto.ReqRes;
-import com.oauth.jwtauth.dto.cartitems.CreateCartItemsDto;
-import com.oauth.jwtauth.entity.Cart;
-import com.oauth.jwtauth.entity.CartItems;
-import com.oauth.jwtauth.entity.Products;
-import com.oauth.jwtauth.repository.CartItemsRepo;
-import com.oauth.jwtauth.repository.CartRepo;
-import com.oauth.jwtauth.repository.ProductRepo;
+import com.oauth.jwtauth.dto.cart.AddCartQuantityDto;
+import com.oauth.jwtauth.dto.cart.DecrementCartQuantityDto;
+import com.oauth.jwtauth.dto.product.ProductParseDto;
+import com.oauth.jwtauth.entity.*;
+import com.oauth.jwtauth.repository.*;
 import com.oauth.jwtauth.services.kafka.KafkaService;
 import com.oauth.jwtauth.services.redis.RedisService;
 import com.oauth.jwtauth.util.JwtInterceptor;
@@ -36,68 +30,117 @@ public class CartService {
   private RedisService redisService;
   @Autowired(required = true)
   private KafkaService kafkaService;
+ 
 
-  public ReqRes addProductInCart(HttpServletRequest httpServletRequest  , CreateCartItemsDto cartItemsDto) {
+  public ReqRes addProductInCart(HttpServletRequest httpServletRequest  , AddCartQuantityDto cartItemsDto) {
     ReqRes response = new ReqRes();
     try {
-     Optional<Products> product =productRepo.findById(cartItemsDto.getProductId());
+     Products product =productRepo.findById(cartItemsDto.getProductId()).orElse(null);
 
-     if (product == null || product.isEmpty()) {
-       response.setMessage("Product not found");
-       response.setStatusCode(404);;
+     if (product == null  ) {
+      response.sendErrorMessage(404,"Product not found" );
        return response;
      }
-     if (product.get().getStock() <= 0) {
-      response.setMessage("Product is out stock");
-      response.setStatusCode(400);
+     if (product.getStock() <= 0 ) {
+      response.sendErrorMessage(400, "Product is out of stock");
       return response;
      }
-     kafkaService.sendMessage("cart_topic" , product.get());
-     Long user =  (long) jwtInterceptor.getIdFromJwt(httpServletRequest);
-     if (user.equals(null)) {
-      response.setMessage("Please Login");
-      response.setStatusCode(401);
+     if (product.getStock() - cartItemsDto.getQuantity() < 0) {
+      response.sendErrorMessage(400,"Please try again with an lower stock" );
       return response;
      }
-
-     Cart cart = cartRepo.findByUser(user);
-     boolean isAlreadyThere  = cart.getCartItems().stream().filter(p-> p.getProduct().getId() == cartItemsDto.getProductId()).findFirst().map(p-> {p.setQuantity(p.getQuantity() + 1);
-     return true;}).orElse(false);
-     if (isAlreadyThere) {
-       cartRepo.save(cart);
-       response.setMessage("Update successfully done");;
-       response.setStatusCode(200);
-       response.setIsSuccess(true);
-       return response;
-     }
-     CartItems cartItems = new CartItems();
-     cartItems.setProduct(product.get());
-     cartItems.setCart(cart);
-     cartItems.setQuantity(cartItemsDto.getQuantity());
-     cartItemsRepo.save(cartItems);
-     response.setMessage("New Product added successfully!");
-     response.setIsSuccess(true);
-     response.setStatusCode(200);
+      Long user =  (long) jwtInterceptor.getIdFromJwt(httpServletRequest);
+     ProductParseDto productDetails = new ProductParseDto(product.getId() , user , cartItemsDto.getQuantity());
+     kafkaService.sendMessage("cart_topic" , productDetails ); 
+     response.sendSuccessResponse(200, "Cart will be updated shortly");
      return response;
+     // i will send the product id or product itself 
+     // after that in the kafka consumer the cart logic is processed 
+
+    //  if (user.equals(null)) {
+    //   response.setMessage("Please Login");
+    //   response.setStatusCode(401);
+    //   return response;
+    //  }
+    //  Cart cart = cartRepo.findByUserId(user);
+    //  boolean isAlreadyThere  = cart.getCartItems().stream().filter(p-> p.getProduct().getId() == cartItemsDto.getProductId()).findFirst().map(p-> {p.setQuantity(p.getQuantity() + cartItemsDto.getQuantity());
+    //  return true;}).orElse(false);
+    //  if (isAlreadyThere) {
+    //    cartRepo.save(cart);
+    //    response.setMessage("Update successfully done");;
+    //    response.setStatusCode(200);
+    //    response.setIsSuccess(true);
+    //    return response;
+    //  }
+    //  CartItems cartItems = new CartItems();
+    //  cartItems.setProduct(product.get());
+    //  cartItems.setCart(cart);
+    //  cartItems.setQuantity(cartItemsDto.getQuantity());
+    //  cartItemsRepo.save(cartItems);
+    //  response.setMessage("New Product added successfully!");
+    //  response.setIsSuccess(true);
+    //  response.setStatusCode(200);
+    //  return response;
    } catch (Exception e) {
-    response.setError(e.getLocalizedMessage());
-    response.setMessage(e.getMessage());
-    response.setStatusCode(500);
+    response.sendErrorMessage(500 , e.getMessage());
     return response;
    }
   }
-
-
-
+  @Transactional(rollbackFor=Exception.class)
   public ReqRes removeProductFromCart(HttpServletRequest httpServletRequest) throws Exception{
     ReqRes response = new ReqRes();
-    Long id = (long) jwtInterceptor.getIdFromJwt(httpServletRequest);
-   Cart cart=  cartRepo.findByUser(id);
-   cartItemsRepo.deleteCartItems(cart.getId());
-   response.setMessage("Success ");
-   response.setIsSuccess(true);
-   response.setStatusCode(200);
-   return response;
+    try {
+      Long id = (long) jwtInterceptor.getIdFromJwt(httpServletRequest);
+     Cart cart=  cartRepo.findByUser(id);
+     if (cart.getCartItems().size() == 0) {
+      throw new Exception("No Products found to remove");
+     }
+     cartItemsRepo.deleteCartItems(cart.getId());
+      if (cart.getCartItems().size() == 1) {
+        cart.setCartTotal(0);
+      }
+      else{
+        int totalPrice = 0;
+        for (CartItems cartItem : cart.getCartItems()) {
+        totalPrice+=(cartItem.getProduct().getPrice() * cartItem.getQuantity());
+      }
+        cart.setCartTotal(totalPrice);
+      }
+      cartRepo.save(cart);
+      response.sendSuccessResponse(200, "Success fully removed");
+     return response;
+  
+    } catch (Exception e) {
+      throw new Exception(e.getMessage());
+    }
+  }
+  @Transactional
+  public ReqRes decrementCartQuantity(HttpServletRequest httpServletRequest ,DecrementCartQuantityDto cartQuantityDto ) throws Exception{
+    ReqRes response = new ReqRes();
+    try {
+    long userId =  jwtInterceptor.getIdFromJwt(httpServletRequest);
+    Cart cart = cartRepo.findByUser(userId);
+    if (cart == null || cart.getCartItems().isEmpty()) {
+      response.sendErrorMessage(401, "We are having some issue");
+      return response;
+    }
+   boolean isCartUpdated =  cart.getCartItems().stream().filter(pro-> pro.getProduct().getId() == cartQuantityDto.getProductId()).findFirst().map(p->{
+        p.setQuantity(p.getQuantity() - 1);
+        cart.setCartTotal(cart.getCartTotal() - p.getProduct().getPrice());
+        cartRepo.save(cart);
+        return true;
+    }).orElse(false);
+    if (isCartUpdated) {
+      response.sendSuccessResponse(200, "Quantity decrement successfully done!" , cart);
+      return response;
+    }
+    response.sendErrorMessage(404, "Product not found to decrement the quantity");
+    return response;
+
+    } catch (Exception e) {
+    response.sendErrorMessage(500, e.getMessage());
+     throw new Exception(e.getMessage());
+    }
 
   }
 
@@ -107,10 +150,7 @@ public class CartService {
      Long id   = (long) jwtInterceptor.getIdFromJwt(httpServletRequest);
     Object CacheCartInfo =  redisService.getData("CART"+id, Object.class);
     if (CacheCartInfo != null) {
-      response.setStatusCode(200);
-      response.setMessage("Cart Products found from redis");
-      response.setData(CacheCartInfo);
-      response.setIsSuccess(true);
+      response.sendSuccessResponse(200 , "Cart Products found from redis" , CacheCartInfo);
       return response;
     }
     Cart cartinfo =  cartRepo.findByUser(id);
@@ -119,16 +159,12 @@ public class CartService {
       response.setStatusCode(400);
       return response;
     }
-    
     redisService.saveInSingleQuery("CART"+id, cartinfo.getCartItems(), 20);
-    response.setIsSuccess(true);
-    response.setMessage("Cart Details found Successfully done");
-    response.setStatusCode(200);
-    response.setData(cartinfo.getCartItems());
+    response.sendSuccessResponse(200 , "Cart Products found from redis" , cartinfo.getCartItems());
     return response;
 
     } catch (Exception e) {
-      response.setMessage(e.getMessage());
+      response.sendErrorMessage(500, e.getMessage());
       response.setStatusCode(500);
       return response;
     }

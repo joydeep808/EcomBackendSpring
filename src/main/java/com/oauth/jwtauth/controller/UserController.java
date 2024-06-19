@@ -5,25 +5,18 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.oauth.jwtauth.dto.LoginDto;
 import com.oauth.jwtauth.dto.ReqRes;
-import com.oauth.jwtauth.dto.UpdateDto;
+import com.oauth.jwtauth.dto.userdto.LoginDto;
+import com.oauth.jwtauth.dto.userdto.UpdateDto;
 import com.oauth.jwtauth.entity.UserEntity;
 import com.oauth.jwtauth.repository.UserRepo;
 import com.oauth.jwtauth.services.user.AuthService;
 import com.oauth.jwtauth.services.user.UserInfo;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.*;
 import jakarta.validation.Valid;
 
 @Controller
@@ -56,35 +49,35 @@ public class UserController {
     return ResponseEntity.ok(authService.signup(userEntity));
   }
   @PostMapping("/login")
-  public ResponseEntity<ReqRes> login(@RequestBody @Valid LoginDto loginDto, HttpServletRequest httpServletRequest , HttpServletResponse response ) throws Exception{
-    return ResponseEntity.ok(authService.login(loginDto, httpServletRequest, response));
+  public ResponseEntity<ReqRes> login(@RequestBody @Valid LoginDto loginDto, HttpServletRequest httpServletRequest , HttpServletResponse httpServletResponse) throws Exception{
+    ReqRes response = authService.login(loginDto, httpServletRequest, httpServletResponse);
+    return   response.getIsSuccess()? ResponseEntity.status(response.getStatusCode()).body(response) : ResponseEntity.status(response.getStatusCode()).body(response);
   }
   @GetMapping("/token")
   public ResponseEntity<ReqRes> generateRefreshToken(HttpServletRequest httpServletRequest , HttpServletResponse httpServletResponse ){
-    return ResponseEntity.ok(authService.getnewAccessToken(httpServletRequest , httpServletResponse));
+    ReqRes response =authService.getnewAccessToken(httpServletRequest , httpServletResponse);
+    return   response.getIsSuccess()? ResponseEntity.status(response.getStatusCode()).body(response) : ResponseEntity.status(response.getStatusCode()).body(response);
   }
-  @GetMapping("/private")
-  public ResponseEntity<ReqRes> privateC(){
-    ReqRes res = new ReqRes();
-    res.setMessage("Private page auth");
-    res.setStatusCode(200);;
-    return ResponseEntity.ok(res);
-  }
+  
   @GetMapping("/user")
   public ResponseEntity<ReqRes> user(){
-    return ResponseEntity.ok(userInfo.onlyUser());
+    ReqRes response = userInfo.onlyUser();
+    return   response.getIsSuccess()? ResponseEntity.status(response.getStatusCode()).body(response) : ResponseEntity.status(response.getStatusCode()).body(response);
   }
   @GetMapping("/info")
   public ResponseEntity<ReqRes> getInfo(HttpServletRequest httpServletRequest){
-    return ResponseEntity.ok(userInfo.getOwnInfo(httpServletRequest));
+    ReqRes response =userInfo.getOwnInfo(httpServletRequest);
+    return   response.getIsSuccess()? ResponseEntity.status(response.getStatusCode()).body(response) : ResponseEntity.status(response.getStatusCode()).body(response);
   }
   @PutMapping("/update")
   public  ResponseEntity<ReqRes> updateInfo(HttpServletRequest httpServletRequest ,@RequestBody UpdateDto updateDto){
-   return  ResponseEntity.ok(userInfo.updateInfo(httpServletRequest, updateDto));
+    ReqRes response = userInfo.updateInfo(httpServletRequest, updateDto);
+    return   response.getIsSuccess()? ResponseEntity.status(response.getStatusCode()).body(response) : ResponseEntity.status(response.getStatusCode()).body(response);
   }
   @PutMapping("/avatar")
   public ResponseEntity<ReqRes> setAvatar(HttpServletRequest httpServletRequest, @RequestParam("avatar") MultipartFile avatar){
-   return ResponseEntity.ok(userInfo.AddRemoveImage(httpServletRequest, avatar));
+    ReqRes response =userInfo.AddRemoveImage(httpServletRequest, avatar);
+    return   response.getIsSuccess()? ResponseEntity.status(response.getStatusCode()).body(response) : ResponseEntity.status(response.getStatusCode()).body(response);
   }
  
   

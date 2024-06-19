@@ -1,4 +1,4 @@
-package com.oauth.jwtauth.config;
+package com.oauth.jwtauth.config.security;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,6 +28,7 @@ public class SecurityFilter {
     String OrderMapping = "/api/v1/order";
     String AddressMapping = "/api/v1/address";
     String CartMapping = "/api/v1/cart/";
+    String CouponCodeMapping = "/api/v1/couponCode/";
     httpSecurity
     .csrf(csrf->csrf.disable()).sessionManagement(sess-> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS)).authenticationProvider(authenticationProvider).addFilterBefore(jwtConfig, UsernamePasswordAuthenticationFilter.class).authorizeHttpRequests(authConfig -> {
                     authConfig.requestMatchers(defaultUrl+"/" ,
@@ -35,7 +36,7 @@ public class SecurityFilter {
                     defaultUrl+"/user/register"
                     ).permitAll();
                     // Admin Route 
-                    //Product Routes
+                    //Product Routes 
                     authConfig.requestMatchers(HttpMethod.GET , "/api/v1/user/private").hasAnyAuthority("ADMIN");             
                             authConfig.requestMatchers(  
                             ProductMappingUrl+"/update" ,
@@ -44,7 +45,9 @@ public class SecurityFilter {
                             defaultUrl+"/user/avatar" ,
                             defaultUrl+"/user/update", 
                             categoryMappingUrl+"/create",
-                            categoryMappingUrl+"/update").hasAuthority("ADMIN");
+                            categoryMappingUrl+"/update",
+                            CouponCodeMapping+"/create"
+                            ).hasAuthority("ADMIN");
                     authConfig.requestMatchers(HttpMethod.POST , "/api/v1/c/create").hasAnyAuthority("ADMIN");
                     /// Category Routes
                    
@@ -56,19 +59,25 @@ public class SecurityFilter {
                      defaultUrl+"/user/info",
                      categoryMappingUrl+"/{name}",
                      ProductMappingUrl+"/{id}",
-                    ProductMappingUrl+"/p/{name}" , 
                      ProductMappingUrl+"/{id}",
-                     ProductMappingUrl+"/p/{name}" ,
                      CartMapping+"add" ,
                      CartMapping+"delete" ,
                      CartMapping+"get",
                      AddressMapping+"/create",
                      AddressMapping+"/update",
                      AddressMapping+"/get",
-                     OrderMapping+"/buy"
+                     OrderMapping+"/buy",
+                     CouponCodeMapping+"/add",
+                     CouponCodeMapping+"/remove"
                      ).hasAnyAuthority("ADMIN"  , "USER");
-                     
 
+
+                     // Any user can access this routes 
+                     authConfig.requestMatchers(ProductMappingUrl+"/p/{name}" , 
+                     ProductMappingUrl+"/{id}",
+                     ProductMappingUrl+"/p/{name}" ,
+                     ProductMappingUrl+"/p/c/{category}",
+                     ProductMappingUrl+"/p/{page}/{maxProducts}").permitAll();
                     authConfig.anyRequest().authenticated();
                 }).exceptionHandling(e->{
                   e.accessDeniedHandler(DeniedHandler());

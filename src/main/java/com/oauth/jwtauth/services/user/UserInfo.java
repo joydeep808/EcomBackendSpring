@@ -11,7 +11,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.oauth.jwtauth.dto.ReqRes;
-import com.oauth.jwtauth.dto.UpdateDto;
+import com.oauth.jwtauth.dto.userdto.UpdateDto;
 import com.oauth.jwtauth.entity.UserEntity;
 import com.oauth.jwtauth.repository.UserRepo;
 import com.oauth.jwtauth.util.JwtInterceptor;
@@ -131,18 +131,6 @@ public class UserInfo {
     return response;
   }
   }
-
-  public ReqRes findUser(UserEntity userEntity){
-    ReqRes res = new ReqRes();
-
-   UserEntity user =  userRepo.findByUsernameAndEmail(userEntity.getUsername() , userEntity.getEmail());
-    if (user == null || user.equals(null)) {
-      res.setMessage("User not found");
-    }
-    else{
-      res.setMessage("found");
-    res.setUser(user);
-    }
-    return res;
-  }
+  // i have to implement email verification and also the reset password validation and other things also 
+  
 }

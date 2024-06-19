@@ -2,6 +2,8 @@ package com.oauth.jwtauth.dto;
 
 import java.util.List;
 
+import org.springframework.stereotype.Component;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.oauth.jwtauth.entity.Products;
@@ -10,9 +12,9 @@ import lombok.Data;
 @Data
 @JsonIgnoreProperties(ignoreUnknown=true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-
+@Component
 public class ReqRes {
-  private Integer statusCode;
+  private int statusCode;
   private String message;
   private String error;
   private Boolean isSuccess;
@@ -28,6 +30,29 @@ public class ReqRes {
   private List<Products> allProducts;
   private Object data;
   public ReqRes(){
+    this.isSuccess = false;
+  }
+  public void sendSuccessResponse(int statusCode , String message , Object data){
+    this.statusCode  = statusCode;
+    this.message = message;
+    this.data = data;
+    this.isSuccess = true;
+  }
+  public void sendSuccessResponse(int statusCode , String message ){
+    this.statusCode  = statusCode;
+    this.message = message;
+    this.isSuccess = true;
+    
+  }
+  public void  sendErrorMessage (int statusCode , String message , String error){
+    this.statusCode =statusCode;
+    this.message =message;
+    this.error =error;
+    this.isSuccess = false;
+  }
+  public void  sendErrorMessage (int statusCode , String message ){
+    this.statusCode =statusCode;
+    this.message =message;
     this.isSuccess = false;
   }
   

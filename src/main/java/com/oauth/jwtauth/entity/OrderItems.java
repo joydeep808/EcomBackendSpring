@@ -7,6 +7,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.oauth.jwtauth.util.LocalDateTimeDeserializer;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -14,6 +16,7 @@ import lombok.Data;
 @Entity
 @Table(name = "OrderItems" , indexes  = {@Index(name="idx_order",columnList = "orderId")} )
 @Data
+
 public class OrderItems {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,11 +31,14 @@ public class OrderItems {
   @JsonBackReference
   private Products products;
   private String color;
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+
   @CreatedDate
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
 
   private LocalDateTime createdAt;
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+  @JsonDeserialize(using = LocalDateTimeDeserializer.class)
 
   @LastModifiedDate
   private LocalDateTime updatedAt;

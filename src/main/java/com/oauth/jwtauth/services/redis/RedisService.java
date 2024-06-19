@@ -54,6 +54,24 @@ public class RedisService {
     }
 
   }
+  public boolean saveCouponCode(String couponCode){
+    try {
+      redisTemplate.execute(new SessionCallback<Object> (){
+        @SuppressWarnings("unchecked")
+        @Override
+        public Object execute(@SuppressWarnings("rawtypes") RedisOperations operations){
+          operations.opsForValue().set("couponCode"+couponCode, couponCode);
+          operations.expire("couponCode"+couponCode, Duration.ofMinutes(3));
+          return null;
+        }
+      });
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+
   public <T> T getData(String key  ,Class<T> classType) throws JsonMappingException, JsonProcessingException{
     String values = (String) redisTemplate.opsForValue().get(key);
     if (values == null) {
@@ -62,4 +80,18 @@ public class RedisService {
    return objectMapper.readValue(values , classType);
   
   }
+  public String getCouponData(String key ) throws JsonMappingException, JsonProcessingException{
+    String values = (String) redisTemplate.opsForValue().get(key);
+    if (values == null) {
+      return null;
+    }
+   return values;
+  
+  }
+
+
+  // Coupon Code set 
+
+
+  
 }

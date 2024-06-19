@@ -3,12 +3,7 @@ package com.oauth.jwtauth.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.oauth.jwtauth.dto.ReqRes;
 import com.oauth.jwtauth.dto.address.CreateAddressDto;
@@ -26,14 +21,18 @@ public class AddressController {
 
   @PostMapping("/create")
   public ResponseEntity<ReqRes> createAddress(HttpServletRequest httpServletRequest , @RequestBody @Valid CreateAddressDto createAddressDto){
-    return ResponseEntity.ok(addressService.createAddress(httpServletRequest, createAddressDto));
+    ReqRes response = addressService.createAddress(httpServletRequest, createAddressDto);
+    return   response.getIsSuccess()? ResponseEntity.status(response.getStatusCode()).body(response) : ResponseEntity.status(response.getStatusCode()).body(response);
   }
   @PutMapping("/update")
   public ResponseEntity<ReqRes> updateAddress(HttpServletRequest httpServletRequest , @RequestBody CreateAddressDto createAddressDto){
-    return ResponseEntity.ok(addressService.updateAddress(httpServletRequest, createAddressDto));
+    ReqRes response = addressService.updateAddress(httpServletRequest, createAddressDto);
+    return   response.getIsSuccess()? ResponseEntity.status(response.getStatusCode()).body(response) : ResponseEntity.status(response.getStatusCode()).body(response);
+    // return ResponseEntity.ok(addressService.updateAddress(httpServletRequest, createAddressDto));
   }
   @GetMapping("/get")
   public ResponseEntity<ReqRes> getAddress(HttpServletRequest request){
-    return ResponseEntity.ok(addressService.getAddress(request));
+    ReqRes response = addressService.getAddress(request);
+    return   response.getIsSuccess()? ResponseEntity.status(response.getStatusCode()).body(response) : ResponseEntity.status(response.getStatusCode()).body(response);
   }
 }

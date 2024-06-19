@@ -1,15 +1,11 @@
 package com.oauth.jwtauth.controller;
 
-import java.util.Map;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.oauth.jwtauth.dto.ReqRes;
+import com.oauth.jwtauth.dto.order.OrderProcessTransectionDetails;
 import com.oauth.jwtauth.services.order.OrderService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,16 +17,8 @@ public class OrderController {
   private OrderService orderService;
   @PostMapping("/buy")
 
-  public ResponseEntity<ReqRes> createOrder(HttpServletRequest  httpServletRequest , @RequestBody Map<String , String> transectionId){
-    try {
-    return ResponseEntity.ok(orderService.makeAOrder(httpServletRequest, transectionId.get("transectionId")));
-      
-    } catch (Exception e) {
-      ReqRes res = new ReqRes();
-      res.setMessage(e.getMessage());
-      res.setStatusCode(500);
-
-      return ResponseEntity.ok(res);
-    }
-  }
+  public ResponseEntity<ReqRes> createOrder(HttpServletRequest  httpServletRequest , @RequestBody OrderProcessTransectionDetails transectionId) throws Exception{
+    ReqRes response = orderService.purchaseAnOrder(httpServletRequest, transectionId);
+    return   response.getIsSuccess()? ResponseEntity.status(response.getStatusCode()).body(response) : ResponseEntity.status(response.getStatusCode()).body(response);
+}
 }

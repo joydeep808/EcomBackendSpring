@@ -3,14 +3,7 @@ package com.oauth.jwtauth.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
+import org.springframework.web.bind.annotation.*;
 import com.oauth.jwtauth.dto.ReqRes;
 import com.oauth.jwtauth.entity.Category;
 import com.oauth.jwtauth.services.category.CategoryService;
@@ -23,15 +16,17 @@ public class CategoryController {
   @PostMapping("/create")
   
   public ResponseEntity<ReqRes> cCreate(@RequestBody Category category){
-    return ResponseEntity.ok(categoryService.createCategory(category));
-    // return ResponseEntity.ok("hisf");
+    ReqRes response = categoryService.createCategory(category);
+    return   response.getIsSuccess()? ResponseEntity.status(response.getStatusCode()).body(response) : ResponseEntity.status(response.getStatusCode()).body(response);
   }
   @PutMapping("/update")
   public ResponseEntity<ReqRes> updateCategory(@RequestBody Long id , String name){
-    return  ResponseEntity.ok(categoryService.updateCategoryName(id, name));
+    ReqRes response = categoryService.updateCategoryName(id, name);
+    return   response.getIsSuccess()? ResponseEntity.status(response.getStatusCode()).body(response) : ResponseEntity.status(response.getStatusCode()).body(response);
   }
   @GetMapping("/{name}")
   public ResponseEntity<ReqRes> getCategoryProducts(@PathVariable String name ){
-    return ResponseEntity.ok(categoryService.getCategoryProducts(name));
+    ReqRes response = categoryService.getCategoryProducts(name);
+    return   response.getIsSuccess()? ResponseEntity.status(response.getStatusCode()).body(response) : ResponseEntity.status(response.getStatusCode()).body(response);
   }
 }

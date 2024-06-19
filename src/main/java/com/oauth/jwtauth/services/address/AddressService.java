@@ -26,7 +26,7 @@ public class AddressService {
   private AddressRepo addressRespo;
   @Autowired
   private UserRepo userRepo;
-
+ 
   public ReqRes createAddress(HttpServletRequest httpServletRequest , CreateAddressDto createAddressDto) {
     ReqRes response = new ReqRes();
     try {
@@ -39,14 +39,10 @@ public class AddressService {
       address.setState(createAddressDto.getState());
       address.setUser(user);
       addressRespo.save(address);
-      response.setStatusCode(200);
-      response.setMessage("Address successfully done!");
-      response.setIsSuccess(true);
+      response.sendSuccessResponse(200 , "Address successfully done!" );
       return response;
     } catch (Exception e) {
-      response.setStatusCode(500);
-      response.setMessage("Address not saved");
-      response.setError(e.getLocalizedMessage());
+      response.sendErrorMessage(500, "Address not saved" , e.getLocalizedMessage());
       return response;
     }
   }
@@ -54,15 +50,13 @@ public class AddressService {
     ReqRes response = new ReqRes();
     try {
         if (updateDto.getId() == null || updateDto.getId().equals(null)) {
-          response.setMessage("Address id is required");
-          response.setStatusCode(400);
+          response.sendErrorMessage(400, "Address id is required");
           return response;
         }
         Long id = (long) jwtInterceptor.getIdFromJwt(request);
       Address foundAddress =   addressRespo.findByIdAndUser(updateDto.getId() , id);
       if (foundAddress == null || foundAddress.equals(null)) {
-        response.setMessage("Address not found to update");
-        response.setStatusCode(404);
+        response.sendErrorMessage(404,"Address not found to update");
         return response;
       }
       Optional.ofNullable(updateDto.getFullAddress()).ifPresent(foundAddress::setFullAddress);
@@ -70,40 +64,30 @@ public class AddressService {
       Optional.ofNullable(updateDto.getState()).ifPresent(foundAddress::setState);
       Optional.ofNullable(updateDto.getPhone()).ifPresent(foundAddress::setPhone);
      Address updatedAddress =  addressRespo.save(foundAddress);
-     response.setMessage("Update successfully done!");
-     response.setStatusCode(200);
-     response.setIsSuccess(true);
-     response.setData(updatedAddress);
+     response.sendSuccessResponse(200 , "Update successfully done!" , updatedAddress);
      return response;
   
     } catch (Exception e) {
-      response.setStatusCode(500);
-      response.setMessage("Server not reachable");
-      response.setError(e.getLocalizedMessage());
+      response.sendErrorMessage(500, "server not reachable" , e.getLocalizedMessage());
       return response;
     }
   }
   public ReqRes getAddress(HttpServletRequest request) {
     ReqRes response = new ReqRes();
+   
     try {
       Long id = (long) jwtInterceptor.getIdFromJwt(request);
       
      List<Address> addresses =  addressRespo.findAddressFromUserId(id);
      if (addresses == null || addresses.size() == 0) {
-      response.setStatusCode(404);
-      response.setMessage("No address found please add one");
+      response.sendErrorMessage(404, "No address found please add one");
       return response;
      }
-     response.setStatusCode(200);
-     response.setMessage("Address found");
-     response.setData(addresses);
-     response.setIsSuccess(true);
+     response.sendSuccessResponse(200, "Address found" , addresses);
      return response;
      
     } catch (Exception e) {
-      response.setStatusCode(500);
-      response.setMessage(e.getMessage());
-      response.setError(e.getLocalizedMessage());
+      response.sendErrorMessage(500 ,e.getLocalizedMessage());
       return response;
     }
   }

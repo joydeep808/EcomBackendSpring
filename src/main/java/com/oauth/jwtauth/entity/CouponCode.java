@@ -2,13 +2,14 @@ package com.oauth.jwtauth.entity;
 
 import java.time.LocalDateTime;
 
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.oauth.jwtauth.entity.enumentity.DiscountType;
+import com.oauth.jwtauth.util.LocalDateTimeDeserializer;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -19,7 +20,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Entity
@@ -30,15 +30,16 @@ public class CouponCode {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
   @Column(unique = true )
-  @NotNull(message = "Coupon code")
-  @Size(min = 6 , max =  20 , message = "couponCode should be within 6-20 digits")
+  @NotNull(message = "Coupon code required" )
   private String couponCode;
+  private long minValue;
   @NotNull(message = "Start Date is required")
-  @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-
+  @JsonFormat(pattern = "yyyy-MM-dd")
+  @DateTimeFormat(pattern = "yyyy-MM-dd")
+  @JsonDeserialize(using = LocalDateTimeDeserializer.class)
   private LocalDateTime startDate;
-@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-
+  @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+  @JsonFormat(pattern = "yyyy-MM-dd")
   @NotNull(message = "End Date is required")
   private LocalDateTime endDate;
   @NotNull(message = "Stock should not be null")
@@ -46,20 +47,15 @@ public class CouponCode {
   private Boolean isPaused;
   private Boolean categoryApplyed;
   private DiscountType discountType;
+  @NotNull(message = "discount upto required")
   private float discountUpto;
+  @NotNull(message = "discount percenage required")
+  private float discountPercentage;
   private String discription;
   @OneToOne(cascade = CascadeType.ALL)
   @JsonBackReference
   @JsonIgnore
   private Category category;
-  @CreatedDate
-@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-
-  private LocalDateTime createdAt;
-  @LastModifiedDate
-@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-
-  private LocalDateTime updatedAt;
   public CouponCode(){
     this.isPaused = false;
     this.categoryApplyed = false;

@@ -13,7 +13,7 @@ public class CouponDto  {
   private String couponCode;
   @NotNull(message = "Start Date is required")
 
-@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+  @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
   private LocalDateTime startDate;
   @NotNull(message = "End Date is required")
   private LocalDateTime endDate;

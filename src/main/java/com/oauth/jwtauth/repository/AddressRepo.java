@@ -19,4 +19,6 @@ public interface AddressRepo  extends JpaRepository<Address , Long>{
   List<Address> findAddressFromUserId(@Param("user") long Id);
   @Query(value = "select * from address where user_id =:user limit 1" , nativeQuery = true)
   Address findByUser(@Param("user") Long user);
+  @Query(value = "select * from address where user_id=:user and is_primery=true limit 1" , nativeQuery = true)
+  Address findByPrimeryAddress(@Param("user") long user);
 }

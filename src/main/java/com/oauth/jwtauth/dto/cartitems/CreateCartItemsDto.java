@@ -9,4 +9,5 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper=false)
 public class CreateCartItemsDto extends CartItems {
   private Long productId;
+  
 }

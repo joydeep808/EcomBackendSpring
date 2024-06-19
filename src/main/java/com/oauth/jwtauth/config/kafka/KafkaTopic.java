@@ -34,4 +34,8 @@ public Map<String , Object> producerConfigs(){
   public NewTopic cartTopic(){
     return TopicBuilder.name("cart_topic").build();
   }
+  @Bean
+  public NewTopic couponCodeTopic(){
+    return TopicBuilder.name("coupon_Code_Topic").build();
+  }
 }

@@ -21,6 +21,7 @@ public class CategoryService {
   
   public ReqRes createCategory(Category category){
     ReqRes response = new ReqRes();
+   
    try {
      Category FoundCategory = categoryRepo.findByName(category.getName());
      if ( FoundCategory != null) {
@@ -45,6 +46,7 @@ else{
 
 public ReqRes updateCategoryName(Long id , String name){
   ReqRes response = new ReqRes();
+ 
   try {
     
     Category checkNameAlreadyExist = categoryRepo.findByName(name);
@@ -76,6 +78,7 @@ public ReqRes updateCategoryName(Long id , String name){
 
 public ReqRes getCategoryProducts(String name){
   ReqRes response = new ReqRes();
+ 
  try {
    Category foundCategory = categoryRepo.findByName(name);
    if ( foundCategory == null ||  foundCategory.equals(null) ) {

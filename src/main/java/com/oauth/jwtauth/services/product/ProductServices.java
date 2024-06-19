@@ -4,6 +4,10 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.oauth.jwtauth.dto.ReqRes;
@@ -13,6 +17,10 @@ import com.oauth.jwtauth.entity.Category;
 import com.oauth.jwtauth.entity.Products;
 import com.oauth.jwtauth.repository.CategoryRepo;
 import com.oauth.jwtauth.repository.ProductRepo;
+import com.oauth.jwtauth.util.ErrorException;
+
+
+
 
 @Service
 public class ProductServices {
@@ -23,25 +31,22 @@ public class ProductServices {
   private CategoryRepo categoryRepo;
 
   public ReqRes createProduct(CreateProductDto productDto) {
-    ReqRes res = new ReqRes();
+    ReqRes response = new ReqRes();
     try {
       if (Optional.ofNullable(productDto.getCategoryId()).isEmpty()) {
-        res.setMessage("Category id is required");
-        res.setStatusCode(400);
-        res.setError("Category id not be null");
-        return res;
+        response.sendErrorMessage(400, "Category id is required" ,"Category id not be null" );
+        return response;
       }
      Optional<Category> category = categoryRepo.findById(productDto.getCategoryId());
      if (category == null || category.isEmpty()) {
-      res.setMessage("Category not found");
-      res.setStatusCode(404 );
-      return res;
+      response.sendErrorMessage(404, "Category not found");
+      return response;
      }
      Products products = productRepo.findByName(productDto.getName());
      if (products != null) {
-        res.setStatusCode(400);
-        res.setMessage("Product already saved with this name");
-        return res;
+        response.setStatusCode(400);
+        response.setMessage("Product already saved with this name");
+        return response;
      }
      Products product = new Products();
      product.setName(productDto.getName());
@@ -54,40 +59,33 @@ public class ProductServices {
      product.setReturnPeriod(productDto.getReturnPeriod());
      product.setColor(productDto.getColor());
      Products savedProducts = productRepo.save(product);
-     res.setStatusCode(200);
-     res.setMessage("Product saved successfully done ");
-     res.setIsSuccess(true);
-     res.setData(savedProducts);
-     return res;
+     response.sendSuccessResponse(200, "Product saved successfully done!" , savedProducts);
+     return response;
     } catch (Exception e) {
-      res.setMessage("Server not reachable");
-      res.setStatusCode(500);
-      res.setError(e.getLocalizedMessage());
-      return res;
+      response.sendErrorMessage(500, "Server not reachable" , e.getLocalizedMessage());
+      return response;
     }
   }
   public ReqRes getProductById(Long id){
-
     ReqRes response = new ReqRes();
+
     try {
-      Products foundProduct = productRepo.findById(id).get();
-      response.setMessage("Product found successfully done!");
-      response.setStatusCode(200);
-      response.setIsSuccess(true);
-      response.setData(foundProduct);
+      Products foundProduct = productRepo.findById(id).orElse(null);
+      if (foundProduct == null) {
+        response.sendErrorMessage(404, "Product not found with this id");
+        return response;
+      }
+      response.sendSuccessResponse(200, "Product found successfully done!" , foundProduct);
       return response;
     } catch (Exception e) {
-      response.setMessage("Server not reachable");
-      response.setError(e.getLocalizedMessage());
-      response.setStatusCode(500);
+      response.sendErrorMessage(500, "Server not reachable" , e.getLocalizedMessage());
       return response;
     }
   }
   public ReqRes updateProduct(UpdateProductDto updateProductDto){
-  ReqRes response = new ReqRes();
+    ReqRes response = new ReqRes();
   if (updateProductDto == null) {
-    response.setMessage("Please provide atleast 1 value to update");
-    response.setStatusCode(400);
+    response.sendErrorMessage(400, "Please provide atleast 1 value to update");
     return response;
   }
   try {
@@ -95,7 +93,7 @@ public class ProductServices {
     if (updateProductDto.getName() != null) {
     Products product = productRepo.findByName(updateProductDto.getName());
     if (product != null) {
-      response.setError("Product name is already store");
+      response.sendErrorMessage(400, "Product name is already store");
     }
     else{
       foundProduct.setName(updateProductDto.getName());
@@ -113,16 +111,11 @@ public class ProductServices {
     }
     Optional.ofNullable(updateProductDto.getDescription()).ifPresent(foundProduct::setDescription);
    Products savedProduct =  productRepo.save(foundProduct);
-    response.setMessage("Updated successfully done!");
-    response.setStatusCode(200);
-    response.setIsSuccess(true);
-    response.setData(savedProduct);
+   response.sendSuccessResponse(200, "Update successfully done!" , savedProduct);
     return response;
 
   } catch (Exception e) {
-    response.setError(e.getLocalizedMessage());
-    response.setMessage(e.getMessage());
-    response.setStatusCode(500);
+    response.sendErrorMessage(500, e.getMessage());
     return response;
   }
 }
@@ -130,22 +123,46 @@ public class ProductServices {
     ReqRes response =  new ReqRes();
     try {
        List<Products> foundProducts =  productRepo.findByNameRegex(name);
+
        if (foundProducts== null || foundProducts.isEmpty() || foundProducts.size()  == 0) {
-        response.setMessage("No Product found ");        
-        response.setStatusCode(404);
+        response.sendErrorMessage(404, "No Product found");
         return response;
        }
-       response.setMessage("Products found successfully done");
-       response.setData(foundProducts);
-       response.setStatusCode(200);
-       response.setIsSuccess(true);
+       response.sendSuccessResponse(200, "Products found successfully done" , foundProducts);
        return response;
     } catch (Exception e) {
-    response.setMessage(e.getMessage());
-    response.setError(e.getLocalizedMessage());
-    response.setStatusCode(500);
+      response.sendErrorMessage(500, e.getMessage());
     return response;
     }
+  }
+  public ReqRes getProductsByCategory(String categoryName) throws ErrorException{
+    ReqRes response = new ReqRes();
+    try {
+    Category category =   categoryRepo.findByName(categoryName);
+    if (category == null) {
+      throw new ErrorException("Category not found" ,404);
+    }
+   List<Products> products =  productRepo.findByCategory(category);
+   if ( products == null || products.size() == 0) {
+    throw new ErrorException("No Products found with this category" , 404);
+   }
+   response.sendSuccessResponse(200, "Products found successfully done" , products);;
+   return response;
+    } catch (ErrorException e ) {
+      throw new ErrorException(e.getMessage() , e.getStatusCode());
+    }
+  }
+  public ReqRes getAllProducts(int pageNumber , int size  ,String field){
+    ReqRes response = new ReqRes();
+    pageNumber = pageNumber > 0 ? pageNumber - 1 : 0;
+    Sort sort = Sort.by(Sort.Direction.ASC , field);
+    Pageable pageable = PageRequest.of(pageNumber , size ,sort);
+    Page<Products> pagePost = this.productRepo.findAll(pageable);
+    System.out.println();
+    List<Products> allProducts = pagePost.getContent();
+    // List<Products> prods = allProducts.stream().map((p)->p).collect(Collectors.toList());
+    response.sendSuccessResponse(200 ,"Products found successfully done!" , allProducts );
+    return response;
   }
 
 }

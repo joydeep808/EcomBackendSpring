@@ -35,4 +35,8 @@ public class Address {
   private Long phone;
   @NotNull(message = "Pincode is required")
   private int pincode;
+  private boolean isPrimery;
+  public Address(){
+    this.isPrimery = false;
+  }
 }

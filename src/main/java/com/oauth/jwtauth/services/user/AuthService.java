@@ -2,8 +2,9 @@ package com.oauth.jwtauth.services.user;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import com.oauth.jwtauth.dto.LoginDto;
+
 import com.oauth.jwtauth.dto.ReqRes;
+import com.oauth.jwtauth.dto.userdto.LoginDto;
 import com.oauth.jwtauth.entity.Cart;
 import com.oauth.jwtauth.entity.UserEntity;
 import com.oauth.jwtauth.repository.CartRepo;
@@ -46,7 +47,7 @@ public class AuthService {
     return reqRes;
   }
 
-  public ReqRes login (LoginDto loginDto , HttpServletRequest httpRequest , HttpServletResponse response) throws Exception{
+  public ReqRes login (LoginDto loginDto , HttpServletRequest httpRequest , HttpServletResponse response) {
     ReqRes repsonse = new ReqRes();
     try{
     // authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword()));
@@ -77,9 +78,9 @@ public class AuthService {
   
   // setRefreshToken.setHttpOnly(true);
   // setRefreshToken.setSecure(true);
-response.addCookie(accessToken);
+  response.addCookie(accessToken);
 
-response.addCookie(setRefreshToken);
+  response.addCookie(setRefreshToken);
   user.setRefreshToken(refreshToken);
   repsonse.setToken(token);
   repsonse.setRefreshToken(refreshToken);

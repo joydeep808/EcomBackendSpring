@@ -1,4 +1,4 @@
-package com.oauth.jwtauth.config;
+package com.oauth.jwtauth.config.security;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.authentication.AuthenticationManager;

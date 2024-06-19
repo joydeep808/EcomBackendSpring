@@ -9,7 +9,10 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.oauth.jwtauth.entity.enumentity.UserStatus;
+import com.oauth.jwtauth.util.LocalDateTimeDeserializer;
+
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.Data;
@@ -24,6 +27,8 @@ public class UserEntity implements UserDetails {
     @NotEmpty(message = "Username is required")
     @Column(unique = true)
     private String username;
+    @NotNull(message = "Name is required")
+    private String name;
     @NotEmpty(message = "Password required")
     @NotNull(message = "Password should not be null")
     private String password;
@@ -38,14 +43,14 @@ public class UserEntity implements UserDetails {
     private String role;
     private String refreshToken;
     private Long refreshTokenExpiry;
-    private String otp;
-    private long otpExpires;
     private UserStatus status;
     @CreatedDate
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
 
     private LocalDateTime createdAt;
-@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
 
     @LastModifiedDate
     private LocalDateTime updatedAt;

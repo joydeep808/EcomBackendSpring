@@ -11,6 +11,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
@@ -24,12 +25,16 @@ public class Cart {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
-  @OneToOne(cascade = CascadeType.ALL , orphanRemoval=true , fetch = FetchType.LAZY)
+  @OneToOne(cascade = CascadeType.ALL , orphanRemoval=true)
   @JsonIgnore
   @JoinColumn(name = "user_id", referencedColumnName = "id")
   private UserEntity user;
-  @OneToMany(cascade = CascadeType.ALL ,mappedBy="cart")
+  @OneToMany(cascade = CascadeType.ALL ,mappedBy="cart" ,orphanRemoval = true , fetch = FetchType.EAGER)
   @JsonManagedReference
   List<CartItems> cartItems;
-
+  private float cartTotal;
+  @ManyToOne(cascade = CascadeType.ALL)
+  
+  private CouponCode couponCode;
+  private float discountCartTotal;
 }

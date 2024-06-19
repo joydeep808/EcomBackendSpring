@@ -1,4 +1,4 @@
-package com.oauth.jwtauth.dto;
+package com.oauth.jwtauth.dto.userdto;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Data;

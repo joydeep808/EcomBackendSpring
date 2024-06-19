@@ -1,4 +1,4 @@
-package com.oauth.jwtauth.config;
+package com.oauth.jwtauth.config.security;
 
 import java.io.IOException;
 import java.util.Collection;

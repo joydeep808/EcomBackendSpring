@@ -5,6 +5,7 @@ import org.springframework.stereotype.Repository;
 import com.oauth.jwtauth.entity.UserEntity;
 @Repository
 public interface UserRepo extends JpaRepository<UserEntity , Object>{
+  // List<UserEntity> findUsers();
   UserEntity findByUsername(String username);
   UserEntity findByEmail( String email);
   UserEntity findByRole(String role);

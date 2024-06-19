@@ -4,8 +4,11 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.oauth.jwtauth.entity.enumentity.OrderStatus;
 import com.oauth.jwtauth.entity.enumentity.PaymentType;
+import com.oauth.jwtauth.util.LocalDateTimeDeserializer;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -43,15 +46,20 @@ public class Order {
   /// Delevery 
   private float shipingAmount;
   private String trackingId;
-
+  @ManyToOne(cascade = CascadeType.ALL)
+  @JsonIgnore
+  private CouponCode couponCode;
 
 
   // date
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+
   @CreatedDate
 @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
 
   private LocalDateTime createdAt;
 @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+@JsonDeserialize(using = LocalDateTimeDeserializer.class)
 
   @LastModifiedDate
   private LocalDateTime updatedAt;

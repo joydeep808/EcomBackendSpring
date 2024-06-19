@@ -1,4 +1,4 @@
-package com.oauth.jwtauth.dto;
+package com.oauth.jwtauth.dto.userdto;
 
 import lombok.Data;
 @Data
