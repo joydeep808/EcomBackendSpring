@@ -1,11 +1,15 @@
 package com.oauth.ecom.controller;
 
-import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.oauth.ecom.dto.ReqRes;
@@ -13,22 +17,20 @@ import com.oauth.ecom.dto.userdto.LoginDto;
 import com.oauth.ecom.dto.userdto.UpdateDto;
 import com.oauth.ecom.entity.UserEntity;
 import com.oauth.ecom.repository.UserRepo;
-import com.oauth.ecom.services.user.AuthService;
+import com.oauth.ecom.services.user.UserAuthService;
 import com.oauth.ecom.services.user.UserInfo;
 
-import jakarta.servlet.http.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
 @Controller
 @RestController
 @RequestMapping("/api/v1/user")
 public class UserController {
-  @Autowired(required = true)
-  private UserInfo userInfo;
-  @Autowired
-  private UserRepo userRepo;
-  @Autowired
-  private AuthService authService;
+  @Autowired(required = true) UserInfo userInfo;
+  @Autowired UserRepo userRepo;
+  @Autowired UserAuthService authService;
   @GetMapping("/")
   public ResponseEntity<ReqRes> home(){
     ReqRes response = new ReqRes();
@@ -39,14 +41,13 @@ public class UserController {
   @PostMapping("/register")
   public ResponseEntity<ReqRes> createUser(@RequestBody @Valid UserEntity userEntity){
     ReqRes response = new ReqRes();
-    Optional<UserEntity> foundUser = Optional.ofNullable(userRepo.findByEmail(userEntity.getEmail()));
-    System.out.println(foundUser);
-    if (!foundUser.isEmpty()) {
+    UserEntity foundUser = userRepo.findByEmail(userEntity.getEmail());
+    if (foundUser != null) {
       response.setMessage("Email already exist");
       response.setStatusCode(400);
-      return ResponseEntity.ok(response);
+      return ResponseEntity.status(400).body(response);
     }
-    return ResponseEntity.ok(authService.signup(userEntity));
+    return ResponseEntity.status(200).body(authService.signup(userEntity));
   }
   @PostMapping("/login")
   public ResponseEntity<ReqRes> login(@RequestBody @Valid LoginDto loginDto, HttpServletRequest httpServletRequest , HttpServletResponse httpServletResponse) throws Exception{

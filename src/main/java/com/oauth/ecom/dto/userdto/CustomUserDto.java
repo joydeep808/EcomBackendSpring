@@ -9,6 +9,7 @@ public class CustomUserDto {
     private String role;
     private String status;
     private String email;
+    
 
     public CustomUserDto(String username, String avatar, String role, String status , String email) {
         this.username = username;

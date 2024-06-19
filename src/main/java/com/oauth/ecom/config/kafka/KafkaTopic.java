@@ -38,4 +38,8 @@ public Map<String , Object> producerConfigs(){
   public NewTopic couponCodeTopic(){
     return TopicBuilder.name("coupon_Code_Topic").build();
   }
+  @Bean
+  public NewTopic welcomEmailSend(){
+    return TopicBuilder.name("welcome_Email_Send").build();
+  }
 }

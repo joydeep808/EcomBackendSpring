@@ -5,25 +5,24 @@ import org.springframework.stereotype.Service;
 
 import com.oauth.ecom.dto.ReqRes;
 import com.oauth.ecom.dto.userdto.LoginDto;
+import com.oauth.ecom.dto.userdto.UserEmailSendDto;
 import com.oauth.ecom.entity.Cart;
 import com.oauth.ecom.entity.UserEntity;
 import com.oauth.ecom.repository.CartRepo;
 import com.oauth.ecom.repository.UserRepo;
+import com.oauth.ecom.services.kafka.KafkaService;
 import com.oauth.ecom.util.JwtUtil;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 @Service
-public class AuthService {
-  @Autowired
-  private CartRepo cartRepo;
-  @Autowired
-  private PasswordEncoder passwordEncoder;
-  @Autowired
-  private UserRepo userRepo;
-  @Autowired 
-  private JwtUtil jwtUtil;
+public class UserAuthService {
+  @Autowired CartRepo cartRepo;
+  @Autowired PasswordEncoder passwordEncoder;
+  @Autowired UserRepo userRepo;
+  @Autowired  JwtUtil jwtUtil;
+  @Autowired KafkaService kafkaService;
   public ReqRes signup(UserEntity userEntity){
     ReqRes reqRes = new ReqRes();
     try {
@@ -38,6 +37,7 @@ public class AuthService {
      cart.setUser(userEntity);
      cartRepo.save(cart);
      reqRes.setUser(user);
+    kafkaService.sendMessage("welcome_Email_Send", new UserEmailSendDto(user));
      reqRes.setStatusCode(200);
      reqRes.setMessage("User created successfully done");
     } catch (Exception e) {
