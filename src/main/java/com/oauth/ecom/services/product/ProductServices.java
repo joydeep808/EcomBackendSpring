@@ -10,7 +10,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import com.oauth.ecom.dto.ReqRes;
 import com.oauth.ecom.dto.product.CreateProductDto;
 import com.oauth.ecom.dto.product.UpdateProductDto;
 import com.oauth.ecom.entity.Category;
@@ -18,6 +17,7 @@ import com.oauth.ecom.entity.Products;
 import com.oauth.ecom.repository.CategoryRepo;
 import com.oauth.ecom.repository.ProductRepo;
 import com.oauth.ecom.util.ErrorException;
+import com.oauth.ecom.util.ReqRes;
 
 
 

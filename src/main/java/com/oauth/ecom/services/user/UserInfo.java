@@ -10,11 +10,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.oauth.ecom.dto.ReqRes;
 import com.oauth.ecom.dto.userdto.UpdateDto;
 import com.oauth.ecom.entity.UserEntity;
 import com.oauth.ecom.repository.UserRepo;
 import com.oauth.ecom.util.JwtInterceptor;
+import com.oauth.ecom.util.ReqRes;
 
 import jakarta.servlet.http.HttpServletRequest;
 

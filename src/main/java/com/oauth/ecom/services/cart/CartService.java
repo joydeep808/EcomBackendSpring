@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.oauth.ecom.dto.ReqRes;
 import com.oauth.ecom.dto.cart.AddCartQuantityDto;
 import com.oauth.ecom.dto.cart.DecrementCartQuantityDto;
 import com.oauth.ecom.dto.product.ProductParseDto;
@@ -13,6 +12,7 @@ import com.oauth.ecom.repository.*;
 import com.oauth.ecom.services.kafka.KafkaService;
 import com.oauth.ecom.services.redis.RedisService;
 import com.oauth.ecom.util.JwtInterceptor;
+import com.oauth.ecom.util.ReqRes;
 
 import jakarta.servlet.http.HttpServletRequest;
 

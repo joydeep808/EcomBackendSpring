@@ -4,9 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.oauth.ecom.dto.ReqRes;
 import com.oauth.ecom.dto.order.OrderProcessTransectionDetails;
 import com.oauth.ecom.services.order.OrderService;
+import com.oauth.ecom.util.ReqRes;
 
 import jakarta.servlet.http.HttpServletRequest;
 

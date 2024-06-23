@@ -6,11 +6,11 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.oauth.ecom.dto.ReqRes;
 import com.oauth.ecom.entity.Category;
 import com.oauth.ecom.entity.Products;
 import com.oauth.ecom.repository.CategoryRepo;
 import com.oauth.ecom.repository.ProductRepo;
+import com.oauth.ecom.util.ReqRes;
 
 @Service
 public class CategoryService {

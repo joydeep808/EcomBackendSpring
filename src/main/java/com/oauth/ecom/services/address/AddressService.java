@@ -6,13 +6,13 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.oauth.ecom.dto.ReqRes;
 import com.oauth.ecom.dto.address.CreateAddressDto;
 import com.oauth.ecom.entity.Address;
 import com.oauth.ecom.entity.UserEntity;
 import com.oauth.ecom.repository.AddressRepo;
 import com.oauth.ecom.repository.UserRepo;
 import com.oauth.ecom.util.JwtInterceptor;
+import com.oauth.ecom.util.ReqRes;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -32,11 +32,17 @@ public class AddressService {
     try {
       String email = jwtInterceptor.getEmailFromJwt(httpServletRequest);
       UserEntity user = userRepo.findByEmail(email);
+     Address primeryAddress =  addressRespo.findByPrimeryAddress(user.getId());
+    if (primeryAddress != null) {
+      primeryAddress.setPrimery(false);
+      addressRespo.save(primeryAddress);
+    }
       Address address = new Address();
       address.setFullAddress(createAddressDto.getFullAddress());
       address.setPhone(createAddressDto.getPhone());
       address.setPincode(createAddressDto.getPincode());
       address.setState(createAddressDto.getState());
+      address.setPrimery(true);
       address.setUser(user);
       addressRespo.save(address);
       response.sendSuccessResponse(200 , "Address successfully done!" );

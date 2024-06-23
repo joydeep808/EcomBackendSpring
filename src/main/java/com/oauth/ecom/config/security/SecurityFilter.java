@@ -75,6 +75,7 @@ public class SecurityFilter {
                      // Any user can access this routes 
                      authConfig.requestMatchers(ProductMappingUrl+"/p/{name}" , 
                      ProductMappingUrl+"/{id}",
+                     ProductMappingUrl+"/p/r/all",
                      ProductMappingUrl+"/p/{name}" ,
                      ProductMappingUrl+"/p/c/{category}",
                      ProductMappingUrl+"/p/{page}/{maxProducts}").permitAll();

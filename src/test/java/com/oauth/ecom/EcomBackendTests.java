@@ -1,10 +1,10 @@
-package com.oauth.jwtauth;
+package com.oauth.ecom;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class JwtauthApplicationTests {
+@SpringBootTest(classes = EcomBackend.class)
+class EcomBackendTests {
 
 	@Test
 	void contextLoads() {

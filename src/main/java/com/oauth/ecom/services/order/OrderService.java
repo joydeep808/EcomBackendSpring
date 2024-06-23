@@ -9,12 +9,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.oauth.ecom.dto.ReqRes;
 import com.oauth.ecom.dto.order.OrderProcessTransectionDetails;
 import com.oauth.ecom.entity.*;
 import com.oauth.ecom.entity.enumentity.PaymentType;
 import com.oauth.ecom.repository.*;
 import com.oauth.ecom.util.JwtInterceptor;
+import com.oauth.ecom.util.ReqRes;
 
 import jakarta.servlet.http.HttpServletRequest;
 

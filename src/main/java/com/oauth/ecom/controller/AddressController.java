@@ -5,9 +5,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import com.oauth.ecom.dto.ReqRes;
 import com.oauth.ecom.dto.address.CreateAddressDto;
 import com.oauth.ecom.services.address.AddressService;
+import com.oauth.ecom.util.ReqRes;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;

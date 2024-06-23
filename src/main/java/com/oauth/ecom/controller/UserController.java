@@ -12,13 +12,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.oauth.ecom.dto.ReqRes;
 import com.oauth.ecom.dto.userdto.LoginDto;
 import com.oauth.ecom.dto.userdto.UpdateDto;
 import com.oauth.ecom.entity.UserEntity;
 import com.oauth.ecom.repository.UserRepo;
 import com.oauth.ecom.services.user.UserAuthService;
 import com.oauth.ecom.services.user.UserInfo;
+import com.oauth.ecom.util.ReqRes;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

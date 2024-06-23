@@ -3,7 +3,6 @@ package com.oauth.ecom.services.couponCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.oauth.ecom.dto.ReqRes;
 import com.oauth.ecom.entity.Cart;
 import com.oauth.ecom.entity.CouponCode;
 import com.oauth.ecom.entity.enumentity.DiscountType;
@@ -12,6 +11,7 @@ import com.oauth.ecom.repository.CouponCodeRepo;
 import com.oauth.ecom.repository.UserRepo;
 import com.oauth.ecom.services.redis.RedisService;
 import com.oauth.ecom.util.JwtInterceptor;
+import com.oauth.ecom.util.ReqRes;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -49,7 +49,7 @@ public class CouponCodeService {
       Ccode.setIsPaused(couponDto.getIsPaused());
       Ccode.setCouponCode(couponDto.getCouponCode());
       Ccode.setDiscountUpto(couponDto.getDiscountUpto());
-      Ccode.setDiscountPercentage(couponDto.getDiscountUpto());
+      Ccode.setDiscountPercentage(couponDto.getDiscountPercentage());
       CouponCode savedCouponCode = couponCodeRepo.save(Ccode);
       response.sendSuccessResponse(200, "Coupon code saved succcessfully done!"  , savedCouponCode);
       return response;
@@ -86,13 +86,15 @@ public class CouponCodeService {
     return response;
    }
    // checking discount logic
-   float DiscountAmount = cart.getCartTotal() / foundCouponCode.getDiscountPercentage();
    if (foundCouponCode.getDiscountType() == DiscountType.FLAT) {
-    if (DiscountAmount > foundCouponCode.getDiscountUpto()) cart.setDiscountCartTotal(cart.getCartTotal() -DiscountAmount);
+   float DiscountAmount = cart.getCartTotal() / foundCouponCode.getDiscountPercentage();
+   System.out.println(DiscountAmount);
+    if (DiscountAmount > foundCouponCode.getDiscountUpto()) cart.setDiscountCartTotal(cart.getCartTotal() -foundCouponCode.getDiscountUpto());
     else cart.setDiscountCartTotal(cart.getCartTotal() -DiscountAmount);
    }
    else{
-    if (DiscountAmount > foundCouponCode.getDiscountUpto()) cart.setDiscountCartTotal(cart.getCartTotal() -DiscountAmount);
+   float DiscountAmount = cart.getCartTotal() / 100 * foundCouponCode.getDiscountPercentage();
+    if (DiscountAmount > foundCouponCode.getDiscountUpto()) cart.setDiscountCartTotal(cart.getCartTotal() -foundCouponCode.getDiscountUpto());
     else cart.setDiscountCartTotal(cart.getCartTotal() -DiscountAmount);
    }
    cart.setCouponCode(foundCouponCode);

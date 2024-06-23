@@ -3,7 +3,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.oauth.ecom.dto.ReqRes;
 import com.oauth.ecom.dto.userdto.LoginDto;
 import com.oauth.ecom.dto.userdto.UserEmailSendDto;
 import com.oauth.ecom.entity.Cart;
@@ -12,6 +11,7 @@ import com.oauth.ecom.repository.CartRepo;
 import com.oauth.ecom.repository.UserRepo;
 import com.oauth.ecom.services.kafka.KafkaService;
 import com.oauth.ecom.util.JwtUtil;
+import com.oauth.ecom.util.ReqRes;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;

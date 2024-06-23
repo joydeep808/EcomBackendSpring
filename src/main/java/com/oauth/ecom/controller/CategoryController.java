@@ -5,9 +5,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import com.oauth.ecom.dto.ReqRes;
 import com.oauth.ecom.entity.Category;
 import com.oauth.ecom.services.category.CategoryService;
+import com.oauth.ecom.util.ReqRes;
 @Controller
 @RestController
 @RequestMapping("/api/v1/category")

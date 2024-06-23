@@ -1,4 +1,4 @@
-package com.oauth.ecom.dto;
+package com.oauth.ecom.util;
 
 import java.util.List;
 
