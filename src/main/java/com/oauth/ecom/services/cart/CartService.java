@@ -1,5 +1,7 @@
 package com.oauth.ecom.services.cart;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -95,19 +97,13 @@ public class CartService {
      if (cart.getCartItems().size() == 0) {
       throw new Exception("No Products found to remove");
      }
-     cartItemsRepo.deleteCartItems(cart.getId());
-      if (cart.getCartItems().size() == 1) {
-        cart.setCartTotal(0);
-      }
-      else{
-        int totalPrice = 0;
-        for (CartItems cartItem : cart.getCartItems()) {
-        totalPrice+=(cartItem.getProduct().getPrice() * cartItem.getQuantity());
-      }
-        cart.setCartTotal(totalPrice);
-      }
-      cartRepo.save(cart);
-      response.sendSuccessResponse(200, "Success fully removed");
+     List<CartItems> cartItems = cart.getCartItems();
+     cartItemsRepo.deleteAll(cartItems);
+     cart.setCartTotal(0);
+     cart.setCouponCode(null);
+     cart.setDiscountCartTotal(0);
+     cartRepo.save(cart);
+     response.sendSuccessResponse(200, "Successfully removed");
      return response;
   
     } catch (Exception e) {
@@ -169,5 +165,8 @@ public class CartService {
       return response;
     }
   }
+
+
+
 
 }

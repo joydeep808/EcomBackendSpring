@@ -152,15 +152,14 @@ public class ProductServices {
       throw new ErrorException(e.getMessage() , e.getStatusCode());
     }
   }
+  
   public ReqRes getAllProducts(int pageNumber , int size  ,String field){
     ReqRes response = new ReqRes();
     pageNumber = pageNumber > 0 ? pageNumber - 1 : 0;
     Sort sort = Sort.by(Sort.Direction.ASC , field);
     Pageable pageable = PageRequest.of(pageNumber , size ,sort);
     Page<Products> pagePost = this.productRepo.findAll(pageable);
-    System.out.println();
     List<Products> allProducts = pagePost.getContent();
-    // List<Products> prods = allProducts.stream().map((p)->p).collect(Collectors.toList());
     response.sendSuccessResponse(200 ,"Products found successfully done!" , allProducts );
     return response;
   }

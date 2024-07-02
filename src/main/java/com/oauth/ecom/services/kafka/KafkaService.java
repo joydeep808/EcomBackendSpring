@@ -18,6 +18,7 @@ public class KafkaService {
       // // objectMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"));
       // byte[] valueBytes = objectMapper.writeValueAsBytes(message);
       kafkaTemplate.send(message2);
+
     } catch (Exception e) {
      System.out.println(e.getLocalizedMessage());
     }

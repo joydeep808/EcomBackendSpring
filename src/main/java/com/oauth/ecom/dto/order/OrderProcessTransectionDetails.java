@@ -5,5 +5,4 @@ import lombok.Data;
 @Data
 public class OrderProcessTransectionDetails {
   private String transectionId;
-  
 }

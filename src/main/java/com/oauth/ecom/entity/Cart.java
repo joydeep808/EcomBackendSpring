@@ -25,16 +25,18 @@ public class Cart {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
-  @OneToOne(cascade = CascadeType.ALL , orphanRemoval=true)
+  @OneToOne(cascade = CascadeType.ALL , orphanRemoval=true ,fetch = FetchType.LAZY)
+  
   @JsonIgnore
-  @JoinColumn(name = "user_id", referencedColumnName = "id")
+  @JoinColumn(name = "user_id", referencedColumnName = "id" )
   private UserEntity user;
-  @OneToMany(cascade = CascadeType.ALL ,mappedBy="cart" ,orphanRemoval = true , fetch = FetchType.EAGER)
+  @OneToMany(cascade = CascadeType.ALL ,mappedBy="cart" ,orphanRemoval = true , fetch = FetchType.LAZY)
   @JsonManagedReference
+  @JsonIgnore
   List<CartItems> cartItems;
   private float cartTotal;
-  @ManyToOne(cascade = CascadeType.ALL)
-  
+  @ManyToOne(cascade = CascadeType.ALL , fetch = FetchType.LAZY)
+
   private CouponCode couponCode;
   private float discountCartTotal;
 }

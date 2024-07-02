@@ -3,16 +3,23 @@ package com.oauth.ecom.services.order;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.oauth.ecom.dto.order.OrderProcessTransectionDetails;
+import com.oauth.ecom.dto.order.OrderDetailsSendDTO;
 import com.oauth.ecom.entity.*;
+import com.oauth.ecom.entity.enumentity.OrderStatus;
 import com.oauth.ecom.entity.enumentity.PaymentType;
 import com.oauth.ecom.repository.*;
+import com.oauth.ecom.services.kafka.KafkaService;
 import com.oauth.ecom.util.JwtInterceptor;
 import com.oauth.ecom.util.ReqRes;
 
@@ -22,121 +29,32 @@ import jakarta.servlet.http.HttpServletRequest;
 public class OrderService {
   
 
-  
-
-  private static final PaymentType PAID =PaymentType.PAID ;
-  @Autowired
-  private JwtInterceptor jwtInterceptor;
-  @Autowired
-  private ProductRepo productRepo;
-  @Autowired
-  private CartRepo cartRepo;
-  @Autowired
-  private CartItemsRepo cartItemsRepo;
-  @Autowired
-  private UserRepo userRepo;
-  @Autowired
-  private OrderRepo orderRepo;
-  @Autowired 
-  private OrderItemsRepo orderItemsRepo;
-  @Autowired
-  private AddressRepo addressRepo;
-
-  @Autowired
-  private CouponCodeRepo  couponCodeRepo;
-  @Transactional(rollbackFor=Exception.class) // it will roll back if anything goes wrong
-  public ReqRes makeAOrder(HttpServletRequest httpServletRequest , String transectionId) throws Exception{
-    ReqRes response = new ReqRes();
-    
-    Long user = (long) jwtInterceptor.getIdFromJwt(httpServletRequest); // get the user from the session
-    Cart cartInfo = cartRepo.findByUser(user);
-    if (cartInfo == null || cartInfo.getCartItems() == null || cartInfo.getCartItems().isEmpty() || cartInfo.getCartItems().size() == 0) {
-        response.setMessage("Producs not there");
-        response.setStatusCode(400);
-        return response;
-    }
-    Order savedOrder  = initializeOrder(user, transectionId);
-    float TotalPrice  = OrderProcessingOperation(cartInfo, savedOrder);
-    SaveOrderDetails(savedOrder, TotalPrice);
-    response.setMessage("Order placed successfully done!");
-    response.setStatusCode(200);
-    response.setIsSuccess(true);
-    return response;
-  }
-
-  public Order initializeOrder(Long user , String transectionId ){
-    Optional<UserEntity> foundUser = userRepo.findById(user);
-    Address address = addressRepo.findByUser(user);
-    Order order = new Order();
-    order.setUser(foundUser.get());
-    order.setTransectionId(transectionId);
-    order.setAddressId(address);
-    Order savedOrder = orderRepo.save(order);
-    return savedOrder;
-  }
-  public float OrderProcessingOperation(Cart cartInfo ,Order savedOrder) throws Exception{
-    float TotalPrice = 0;
-    for (CartItems e : cartInfo.getCartItems()) {
-      TotalPrice +=  CheckProductParamiters(e, TotalPrice, savedOrder, cartInfo);
-      }
-      return TotalPrice;
-  }
-  public float CheckProductParamiters(CartItems e , float TotalPrice , Order savedOrder , Cart cartInfo) throws Exception{
-    Products cartProduct = e.getProduct();
-    Products foundProduct =   productRepo.findByProductId(cartProduct.getId());
-    // if (foundProduct.getStock() - e.getQuantity() <= 0) throw new Exception("Order not placed");
-    // if i check the quantity than it will lead us a big problem
-    // because this operation runs only when the user pays money 
-    // that's i have to accept the order and process the order 
-    foundProduct.setStock(foundProduct.getStock() - e.getQuantity());
-    OrderItems orderItem = new OrderItems();
-    orderItem.setColor(cartProduct.getColor());
-    orderItem.setQuantity(e.getQuantity());
-    orderItem.setTotalprice(e.getQuantity() * cartProduct.getPrice());
-    orderItem.setProducts(foundProduct);
-    orderItem.setOrder(savedOrder);
-    TotalPrice+=e.getQuantity() * cartProduct.getPrice();
-    cartItemsRepo.deleteCartItems(cartInfo.getId());
-    cartInfo.setCartItems(null);
-    cartRepo.save(cartInfo);
-    orderItemsRepo.save(orderItem);
-    return TotalPrice;
-  }
-  public void SaveOrderDetails(Order savedOrder , float TotalPrice){
-    savedOrder.setDiscountAmount(0);
-    savedOrder.setNetAmount(TotalPrice);
-    savedOrder.setPaymentType(PAID);
-    LocalDateTime DeleveryDate =LocalDateTime.of( 2024 , 12 , 20  , 7 , 20 , 20);
-    savedOrder.setDeleveryDate(DeleveryDate);
-    savedOrder.setNetAmount(TotalPrice - 50);
-    savedOrder.setShipingAmount(50);
-    
-    orderRepo.save(savedOrder);
-  }
+  @Autowired JwtInterceptor jwtInterceptor;
+  @Autowired ProductRepo productRepo;
+  @Autowired CartRepo cartRepo;
+  @Autowired CartItemsRepo cartItemsRepo;
+  @Autowired UserRepo userRepo;
+  @Autowired OrderRepo orderRepo;
+  @Autowired  OrderItemsRepo orderItemsRepo;
+  @Autowired AddressRepo addressRepo;
+  @Autowired CouponCodeRepo  couponCodeRepo;
+  @Autowired KafkaService kafkaService;
 
 
 
 
-
-
-
-
-
-  @Transactional
-  
- public ReqRes purchaseAnOrder(HttpServletRequest request ,OrderProcessTransectionDetails orderProcessTransectionDetails ) throws Exception{
+  @Transactional(rollbackFor = Exception.class)
+ public ReqRes purchaseAnOrder(long id ,String order_payment_id  , String paymentType) throws Exception{
   try {
-    ReqRes response = new ReqRes();
-    
-  long id =(long) jwtInterceptor.getIdFromJwt(request);
+ReqRes response = new ReqRes();
  Cart cart =  cartRepo.findByUser(id);
  if (cart == null || cart.getCartItems().isEmpty()) {
   response.sendErrorMessage(401, "User not found");
   return response;
  }
  Address address = addressRepo.findByPrimeryAddress(id);
- Order savedOrder = initializeOrderAndSaveOrder(address , cart , orderProcessTransectionDetails);
-saveOrderItems( savedOrder , cart);
+ Order savedOrder = initializeOrderAndSaveOrder(address , cart , order_payment_id , paymentType);
+saveOrderItems( savedOrder , cart , paymentType);
  response.sendSuccessResponse(200, "Successfully order placed" , savedOrder);
  return response;
   } catch (Exception e) {
@@ -148,26 +66,36 @@ public void getCouponCodeForOrder(CouponCode couponCode){
 couponCode.setStock(couponCode.getStock() - 1);
 couponCodeRepo.save(couponCode);
 }
-public Order initializeOrderAndSaveOrder(Address address , Cart cart , OrderProcessTransectionDetails orderProcessTransectionDetails){
+public Order initializeOrderAndSaveOrder(Address address , Cart cart , String order_payment_id , String paymentType){
   Order initializeOrder = new Order();
  initializeOrder.setAddressId(address);
- initializeOrder.setNetAmount(cart.getCartTotal());
- if (cart.getCouponCode() == null||cart.getCouponCode().equals(null) ) {
+ initializeOrder.setTotalAmount(cart.getCartTotal());
+ if (cart.getCouponCode() == null) {
     initializeOrder.setCouponCode(null);
     initializeOrder.setDiscountAmount(cart.getDiscountCartTotal());
  }
  else{
- getCouponCodeForOrder(cart.getCouponCode());
+getCouponCodeForOrder(cart.getCouponCode());
 initializeOrder.setCouponCode(cart.getCouponCode());
-initializeOrder.setDiscountAmount(cart.getDiscountCartTotal());
- }
- initializeOrder.setTrackingId(orderProcessTransectionDetails.getTransectionId());
+initializeOrder.setDiscountAmount(cart.getDiscountCartTotal() - 50);
+}
+ initializeOrder.setTransectionId(order_payment_id);
+ initializeOrder.setTrackingId("");
 initializeOrder.setShipingAmount(50);
 initializeOrder.setUser(cart.getUser());
+if (paymentType.equals("NOTPAID")) {
+  initializeOrder.setPaymentType(PaymentType.NOTPAID);
+  initializeOrder.setStatus(OrderStatus.PENDING);
+}
+else{
+  initializeOrder.setPaymentType(PaymentType.PAID);
+  initializeOrder.setStatus(OrderStatus.PLACED);
+}
+initializeOrder.setExpectedDeleveryDate(LocalDateTime.now().plusDays(10));
 Order savedOrder = orderRepo.save(initializeOrder);
 return savedOrder;
 }
-public void saveOrderItems(Order savedOrder , Cart cart) throws Exception{
+public void saveOrderItems(Order savedOrder , Cart cart , String paymentType) throws Exception{
   List<Long>  cartItemIds = new ArrayList<>();
   List<OrderItems> orderItems = new ArrayList<>();
   List<Products> updateProducts = new ArrayList<>();
@@ -180,12 +108,16 @@ public void saveOrderItems(Order savedOrder , Cart cart) throws Exception{
   orderProducts.setColor(cartProducts.getProduct().getColor());
   cartItemIds.add(cartProducts.getId());
   orderItems.add(orderProducts);
-  cartProducts.getProduct().setStock(cartProducts.getProduct().getStock() - cartProducts.getQuantity());
   updateProducts.add(cartProducts.getProduct());
+  if (paymentType.equals("PAID")) {
+  cartProducts.getProduct().setStock(cartProducts.getProduct().getStock() - cartProducts.getQuantity());
+  }
 }
-UpdateProductQuantity(updateProducts);
+UpdateProductQuantity(updateProducts); /// It will updated
 orderItemsRepo.saveAll(orderItems);
-RemoveCartProducts(cart , cartItemIds);
+if (paymentType.equals("PAID")) {
+  RemoveCartProducts(cart , cartItemIds);
+}
 }
 public void UpdateProductQuantity(List<Products> products){
   productRepo.saveAll(products);
@@ -200,16 +132,119 @@ public void RemoveCartProducts(Cart cart , List<Long> cartItemsId){
   cartRepo.save(cart);  
   cartItemsRepo.deleteCartItems(cart.getId());
   
+} 
+//// >>>>>>>>>>>>>>>>>>>Order Service Ends<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+
+
+
+
+
+
+
+public boolean isOrderAlreadyThere (String id){
+Order foundPendingOrder = orderRepo.findByTransectionId(id).orElse(null);
+if (foundPendingOrder == null) {
+  return false;
+}
+foundPendingOrder.setPaymentType(PaymentType.PAID);
+foundPendingOrder.setStatus(OrderStatus.PLACED);
+orderRepo.save(foundPendingOrder);
+return true;
+}
+
+
+public int  performTheOperation(int page , int size){
+
+  Sort sort  = Sort.by(Sort.Direction.DESC , "created_at");
+  Pageable pageable = PageRequest.of(page, size  , sort);
+ Page<Order> pageValues =  orderRepo.findPendingOrders(pageable); /// 
+
+ List<Order> orders = pageValues.getContent(); /// the orders that are found in the query
+  List<Products> updateAbleProducts = new ArrayList<>();
+  List<Order> updateAbleOrders = new ArrayList<>();
+  for (Order order : orders) {
+  order.setPaymentType(PaymentType.PAID);
+  order.setStatus(OrderStatus.PLACED);
+  order.setExpectedDeleveryDate(LocalDateTime.now().plusDays(10));
+  List<OrderItems> orderItems = orderItemsRepo.findByOrderId(order.getId());
+  orderItems.stream().map(e->{
+    e.setQuantity(e.getQuantity());
+    updateAbleProducts.add(e.getProducts());
+    return null;
+  });
+  updateAbleOrders.add(order);
+  }
+  orderRepo.saveAll(updateAbleOrders);
+  productRepo.saveAll(updateAbleProducts);
+  return pageValues.getTotalPages();
+}
+
+public boolean successTheFailedOrders(){
+try {
+  int page = 0;
+  int size = 15;
+  int pages = performTheOperation(page, size);
+  page+=1;
+  if (pages > 0) {
+   for (int i = 0; i < pages; i++) {
+    performTheOperation(page, size);
+    page++;
+   }
+  }
+  return true;
+} catch (Exception e) {
+  return false;
 }
 }
 
+public boolean deleteOrder(Order order){
+ try {
+   orderRepo.delete(order);
+   return true;
+ } catch (Exception e) {
+  return false;
+ }
 
-// get the cart info
-// get the total price and also check the coupon code is valid or not 
-// if valid than get the discount to the user 
-// after that get the discounted total and save the order and the following details 
+}
+
+public void deleteExpiredOrders(){
+  
+}
 
 
 
+ /// It will handle The failed orders 
+public ReqRes handleFailedOrders(Map<String , String> value){
+  JSONObject jsonObject = new JSONObject();
+  jsonObject.put("razorpay_order_id", value.get("razorpay_order_id"));
+  jsonObject.put("user", 1);
+  jsonObject.put("paymentType", PaymentType.NOTPAID);
+  kafkaService.sendMessage("order_topic", jsonObject);
+  ReqRes response = new ReqRes();
+  response.sendSuccessResponse(200, "Successfully saved the failed transection and it will be conform within 30 minutes");
+  return response;
+
+}
 
 
+
+// Show all the orders to the user
+public ReqRes getAlltheOrders(HttpServletRequest httpServletRequest) throws Exception{
+  ReqRes response = new ReqRes();
+  long user = jwtInterceptor.getIdFromJwt(httpServletRequest);
+
+  List<OrderDetailsSendDTO> orders = orderRepo.findOrders(user);
+  if (orders == null || orders.isEmpty()) {
+    response.sendErrorMessage(404, "No Order found with the current user ");
+    return response;
+  }
+  
+  response.sendSuccessResponse(200, "Success" , orders);
+  return response;
+}
+
+}

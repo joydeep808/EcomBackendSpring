@@ -75,25 +75,3 @@ public class UserEntity implements UserDetails {
    }
    
 }
-
-
-
-
-
-
-
-
-
-
-    // @OneToMany(mappedBy = "seller" , cascade = CascadeType.ALL , orphanRemoval = true)
-    // @JsonManagedReference
-    // private List<Products> products;
-    // @JsonManagedReference
-    // @OneToMany(mappedBy = "user", cascade = CascadeType.ALL , orphanRemoval = true)
-    // private List<Order> orders;
-    // @OneToMany(mappedBy = "user" , cascade = CascadeType.ALL , orphanRemoval = true)
-    // @JsonManagedReference
-    // private List<Address> address;
-    // @OneToMany(mappedBy = "seller" , cascade = CascadeType.ALL , orphanRemoval = true)
-    // @JsonManagedReference
-    // private List<CouponCode> couponCodes;

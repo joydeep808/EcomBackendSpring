@@ -1,4 +1,6 @@
 package com.oauth.ecom.config.security;
+import java.util.Arrays;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,11 +10,13 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import jakarta.servlet.http.HttpServletResponse;
-
-import org.springframework.security.web.access.AccessDeniedHandler;
 @Configuration
 @EnableWebSecurity
 public class SecurityFilter {
@@ -78,8 +82,12 @@ public class SecurityFilter {
                      ProductMappingUrl+"/p/r/all",
                      ProductMappingUrl+"/p/{name}" ,
                      ProductMappingUrl+"/p/c/{category}",
-                     ProductMappingUrl+"/p/{page}/{maxProducts}").permitAll();
-                    authConfig.anyRequest().authenticated();
+                     ProductMappingUrl+"/p/{page}/{maxProducts}",
+                     OrderMapping+"/request",
+                     OrderMapping+"/callback"
+
+                     ).permitAll();
+                    authConfig.anyRequest().permitAll();
                 }).exceptionHandling(e->{
                   e.accessDeniedHandler(DeniedHandler());
                 });
@@ -90,5 +98,17 @@ public class SecurityFilter {
     return (req , res , accesDeniedException)->{
       res.sendError(HttpServletResponse.SC_FORBIDDEN , "Access Denied" +accesDeniedException.getMessage());
     };
+  }
+
+  @Bean
+  CorsConfigurationSource configurationSource(){
+    CorsConfiguration configuration = new CorsConfiguration();
+    configuration.setAllowedOrigins(Arrays.asList("*"));
+    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+    configuration.setAllowedHeaders(Arrays.asList("*"));
+    configuration.setAllowCredentials(false);
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+    return source;
   }
 }

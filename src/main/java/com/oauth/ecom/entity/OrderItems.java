@@ -7,6 +7,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.oauth.ecom.util.LocalDateTimeDeserializer;
 
@@ -21,9 +22,11 @@ public class OrderItems {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
-  @ManyToOne(cascade = CascadeType.ALL )
+  @ManyToOne(cascade = CascadeType.ALL)
+  
   @JoinColumn(name = "orderId")
-  private Order order ;
+  @JsonIgnore
+  private Order order;
   private int quantity;
   private double Totalprice;
   @ManyToOne(cascade = CascadeType.ALL)
@@ -31,8 +34,7 @@ public class OrderItems {
   @JsonBackReference
   private Products products;
   private String color;
-    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
-
+  @JsonDeserialize(using = LocalDateTimeDeserializer.class)
   @CreatedDate
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
 

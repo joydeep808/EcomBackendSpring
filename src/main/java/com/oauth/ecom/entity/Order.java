@@ -28,14 +28,10 @@ public class Order {
   @JoinColumn(name = "addressId")
   @JsonBackReference
   private Address addressId;
-  @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-
+  @JsonFormat(pattern = "yyyy-MM-dd")
   private LocalDateTime expectedDeleveryDate;
-@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-
+  @JsonFormat(pattern = "yyyy-MM-dd")
   private LocalDateTime deleveryDate;
-  
-  
   
   // Transection
   private String transectionId;
