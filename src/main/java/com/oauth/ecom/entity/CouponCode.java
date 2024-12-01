@@ -20,11 +20,15 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 @Entity
 @Table(name = "Couponcode")
 @Data
+@Builder
+@AllArgsConstructor
 public class CouponCode {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

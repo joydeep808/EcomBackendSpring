@@ -115,6 +115,11 @@
     <artifactId>razorpay-java</artifactId>
     <version>1.4.6</version>
 </dependency>
+<!--  RabbitMq -->
+<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-amqp</artifactId>
+		</dependency>
 
 
 <!-- Redis Dependencys End -->
@@ -130,10 +135,10 @@
     <artifactId>jackson-datatype-jsr310</artifactId>
 </dependency>
 	<!-- kafka -->
-		<dependency>
+		<!-- <dependency>
 			<groupId>org.springframework.kafka</groupId>
 			<artifactId>spring-kafka</artifactId>
-		</dependency>
+		</dependency> -->
 
 <!-- Email -->
 			<dependency>

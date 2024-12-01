@@ -39,18 +39,12 @@ public class UserInfo {
     }
     UserEntity user = userRepo.findByEmail(email);
     if (user.equals(null) || user == null ) {
-       response.setMessage("User not found please login again ");
-       response.setStatusCode(404);
+       response.sendErrorMessage(404,"User not found please login again ");
     }
     else{
-      response.setMessage("User found");
-      response.setStatusCode(200);
-      response.setData(user);
-      response.setIsSuccess(true);
+      response.sendSuccessResponse(200 , "User details found" , user);
     }
    } catch (Exception e) {
-    response.setError(e.getMessage());
-    response.setMessage("error from our side");
     response.setStatusCode(500);
    }
     return response;

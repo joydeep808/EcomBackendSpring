@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.oauth.ecom.entity.CouponCode;
-import com.oauth.ecom.services.couponCode.CouponCodeService;
+import com.oauth.ecom.services.couponcode.CouponCodeService;
 import com.oauth.ecom.util.ReqRes;
 
 import jakarta.servlet.http.HttpServletRequest;

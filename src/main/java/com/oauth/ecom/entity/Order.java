@@ -11,10 +11,14 @@ import com.oauth.ecom.entity.enumentity.PaymentType;
 import com.oauth.ecom.util.LocalDateTimeDeserializer;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 @Entity
 @Table(name = "Orders")
 @Data
+@AllArgsConstructor
+@Builder
 public class Order {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

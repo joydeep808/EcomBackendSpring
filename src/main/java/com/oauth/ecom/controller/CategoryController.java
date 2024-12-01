@@ -15,10 +15,9 @@ public class CategoryController {
   @Autowired
   private CategoryService categoryService;
   @PostMapping("/create")
-  
   public ResponseEntity<ReqRes> cCreate(@RequestBody Category category){
     ReqRes response = categoryService.createCategory(category);
-    return   response.getIsSuccess()? ResponseEntity.status(response.getStatusCode()).body(response) : ResponseEntity.status(response.getStatusCode()).body(response);
+    return  response.getIsSuccess()? ResponseEntity.status(response.getStatusCode()).body(response) : ResponseEntity.status(response.getStatusCode()).body(response);
   }
   @PutMapping("/update")
   public ResponseEntity<ReqRes> updateCategory(@RequestBody Long id , String name){
@@ -26,8 +25,8 @@ public class CategoryController {
     return   response.getIsSuccess()? ResponseEntity.status(response.getStatusCode()).body(response) : ResponseEntity.status(response.getStatusCode()).body(response);
   }
   @GetMapping("/{name}")
-  public ResponseEntity<ReqRes> getCategoryProducts(@PathVariable String name ){
-    ReqRes response = categoryService.getCategoryProducts(name);
+  public ResponseEntity<ReqRes> getCategoryProducts(@PathVariable String name  , @RequestParam("page") Integer page){
+    ReqRes response = categoryService.getCategoryProducts(name , page);
     return   response.getIsSuccess()? ResponseEntity.status(response.getStatusCode()).body(response) : ResponseEntity.status(response.getStatusCode()).body(response);
   }
 }

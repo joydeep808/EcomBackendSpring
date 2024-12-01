@@ -11,4 +11,6 @@ public interface CouponCodeRepo extends JpaRepository<CouponCode , Object>{
   
   Optional<CouponCode> findByCouponCode(String couponCode);
 
+  void findOneByCouponCode(String couponCode);
+
 }

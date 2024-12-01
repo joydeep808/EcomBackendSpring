@@ -1,4 +1,4 @@
-package com.oauth.ecom.services.couponCode;
+package com.oauth.ecom.services.couponcode;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -37,20 +37,21 @@ public class CouponCodeService {
         response.setStatusCode(400);
         return response;
       }
-      CouponCode Ccode = new CouponCode(); 
-      Ccode.setCouponCode(couponDto.getCouponCode());
-      Ccode.setStartDate(couponDto.getStartDate());
-      Ccode.setEndDate(couponDto.getEndDate());
-      Ccode.setStock(couponDto.getStock());
-      Ccode.setMinValue(couponDto.getMinValue());
-      Ccode.setDiscountType(couponDto.getDiscountType());
-      Ccode.setDiscription(couponDto.getDiscription());
-      Ccode.setCategoryApplyed(couponDto.getCategoryApplyed());
-      Ccode.setIsPaused(couponDto.getIsPaused());
-      Ccode.setCouponCode(couponDto.getCouponCode());
-      Ccode.setDiscountUpto(couponDto.getDiscountUpto());
-      Ccode.setDiscountPercentage(couponDto.getDiscountPercentage());
-      CouponCode savedCouponCode = couponCodeRepo.save(Ccode);
+     CouponCode code = CouponCode.builder().couponCode(couponDto.getCouponCode())
+      .category(couponDto.getCategory())
+      .discountType(couponDto.getDiscountType())
+      .discription(couponDto.getDiscription())
+      .discountUpto(couponDto.getDiscountUpto())
+      .discountPercentage(couponDto.getDiscountPercentage())
+      .minValue(couponDto.getMinValue())
+      .startDate(couponDto.getStartDate())
+      .endDate(couponDto.getEndDate())
+      .stock(couponDto.getStock())
+      .isPaused(couponDto.getIsPaused())
+      .categoryApplyed(couponDto.getCategoryApplyed())
+      .discription(couponDto.getDiscription())
+      .build(); 
+      CouponCode savedCouponCode = couponCodeRepo.save(code);
       response.sendSuccessResponse(200, "Coupon code saved succcessfully done!"  , savedCouponCode);
       return response;
     } catch (Exception e) {

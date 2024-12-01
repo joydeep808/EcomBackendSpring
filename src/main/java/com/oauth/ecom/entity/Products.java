@@ -12,12 +12,16 @@ import com.oauth.ecom.util.LocalDateTimeDeserializer;
 import jakarta.persistence.*;
 import jakarta.persistence.Id;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 @Entity
 @Table(name = "Products" , indexes = { @Index(name="idx_name" , columnList = "name")})
 @Data
 @EntityListeners(AuditingEntityListener.class)
+@Builder
+@AllArgsConstructor
 public class Products {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

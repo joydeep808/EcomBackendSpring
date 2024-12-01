@@ -33,16 +33,18 @@ public class ReqRes {
   public ReqRes(){
     this.isSuccess = false;
   }
-  public void sendSuccessResponse(int statusCode , String message , Object data){
-    this.statusCode  = statusCode;
-    this.message = message;
-    this.data = data;
-    this.isSuccess = true;
-  }
+  
   public void sendSuccessResponse(int statusCode , String message ){
     this.statusCode  = statusCode;
     this.message = message;
     this.isSuccess = true;
+    
+  }
+  public <T> void sendSuccessResponse(int statusCode , String message , T data ){
+    this.statusCode  = statusCode;
+    this.message = message;
+    this.isSuccess = true;
+    this.data = data;
     
   }
   public void  sendErrorMessage (int statusCode , String message , String error){

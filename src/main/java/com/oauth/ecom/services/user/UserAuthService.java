@@ -9,7 +9,7 @@ import com.oauth.ecom.entity.Cart;
 import com.oauth.ecom.entity.UserEntity;
 import com.oauth.ecom.repository.CartRepo;
 import com.oauth.ecom.repository.UserRepo;
-import com.oauth.ecom.services.kafka.KafkaService;
+// import com.oauth.ecom.services.kafka.KafkaService;
 import com.oauth.ecom.util.JwtUtil;
 import com.oauth.ecom.util.ReqRes;
 
@@ -22,7 +22,7 @@ public class UserAuthService {
   @Autowired PasswordEncoder passwordEncoder;
   @Autowired UserRepo userRepo;
   @Autowired  JwtUtil jwtUtil;
-  @Autowired KafkaService kafkaService;
+  // @Autowired KafkaService kafkaService;
   public ReqRes signup(UserEntity userEntity){
     ReqRes reqRes = new ReqRes();
     try {
@@ -37,7 +37,7 @@ public class UserAuthService {
      cart.setUser(userEntity);
      cartRepo.save(cart);
      reqRes.setUser(user);
-    kafkaService.sendMessage("welcome_Email_Send", new UserEmailSendDto(user));
+    // kafkaService.sendMessage("welcome_Email_Send", new UserEmailSendDto(user));
      reqRes.setStatusCode(200);
      reqRes.setMessage("User created successfully done");
     } catch (Exception e) {
