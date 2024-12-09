@@ -1,5 +1,6 @@
 package com.oauth.ecom.entity;
 
+import java.math.BigInteger;
 import java.time.LocalDateTime;
 
 import org.springframework.data.annotation.CreatedDate;
@@ -8,6 +9,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.oauth.ecom.util.LocalDateTimeDeserializer;
 
@@ -15,31 +17,23 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
-@Table(name = "OrderItems" , indexes  = {@Index(name="idx_order",columnList = "orderId")} )
+@Table(name = "OrderItems")
 @Data
-
 public class OrderItems {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
-  @ManyToOne(cascade = CascadeType.ALL)
-  
-  @JoinColumn(name = "orderId")
-  @JsonIgnore
-  private Order order;
+  @Column(name = "order_id")
+  private Long order;
   private int quantity;
   private double Totalprice;
-  @ManyToOne(cascade = CascadeType.ALL)
-  @JoinColumn(name = "Product")
-  @JsonBackReference
-  private Products products;
+  private Long products;
   private String color;
   @JsonDeserialize(using = LocalDateTimeDeserializer.class)
   @CreatedDate
-  @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-
+  @JsonFormat(shape = Shape.STRING)
   private LocalDateTime createdAt;
-  @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+  @JsonFormat(shape = Shape.STRING)
   @JsonDeserialize(using = LocalDateTimeDeserializer.class)
 
   @LastModifiedDate

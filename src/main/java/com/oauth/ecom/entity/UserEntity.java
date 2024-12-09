@@ -1,4 +1,5 @@
 package com.oauth.ecom.entity;
+
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -16,8 +17,9 @@ import com.oauth.ecom.util.LocalDateTimeDeserializer;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.Data;
+
 @Entity
-@Table(name = "Users" ,indexes  = {@Index(name="idx_email",columnList = "email")})
+@Table(name = "Users", indexes = { @Index(name = "idx_email", columnList = "email") })
 @Data
 public class UserEntity implements UserDetails {
     @Id
@@ -45,33 +47,35 @@ public class UserEntity implements UserDetails {
     private Long refreshTokenExpiry;
     private UserStatus status;
     @CreatedDate
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
-
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private LocalDateTime createdAt;
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
 
     @LastModifiedDate
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private LocalDateTime updatedAt;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(role));
     }
+
     @Override
-   public String getPassword(){
-    return password;
-   };
-   @Override
-   public String getUsername(){
-    return username;
-   }
-   public UserEntity(){
-    this.status = UserStatus.PENDING;
-    this.role = "USER";
-    this.createdAt = LocalDateTime.now();
-    this.updatedAt = LocalDateTime.now();
-   }
-   
+    public String getPassword() {
+        return password;
+    };
+
+    @Override
+    public String getUsername() {
+        return username;
+    }
+
+    public UserEntity() {
+        this.status = UserStatus.PENDING;
+        this.role = "USER";
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
 }

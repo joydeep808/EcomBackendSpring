@@ -1,6 +1,5 @@
 package com.oauth.ecom.rabbitmq;
 
-import java.util.Queue;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;

@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.oauth.ecom.entity.Cart;
 import com.oauth.ecom.entity.CouponCode;
 import com.oauth.ecom.services.couponcode.CouponCodeService;
 import com.oauth.ecom.util.ReqRes;
@@ -20,18 +21,15 @@ public class CouponCodeController {
   private CouponCodeService couponCodeService;
 
   @PostMapping("/create")
-  public ResponseEntity<ReqRes> createCouponCode(@RequestBody @Valid CouponCode couponCode){
-    ReqRes response = couponCodeService.createCoupon(couponCode);
-    return   response.getIsSuccess()? ResponseEntity.status(response.getStatusCode()).body(response) : ResponseEntity.status(response.getStatusCode()).body(response);
+  public ResponseEntity<ReqRes<CouponCode>> createCouponCode(@RequestBody @Valid CouponCode couponCode){
+      return couponCodeService.createCoupon(couponCode);
   }
   @PostMapping("/add")
-  public ResponseEntity<ReqRes> addCouponCode(HttpServletRequest request ,@RequestBody  Map<String , String> couponCode){
-    ReqRes response = couponCodeService.addCouponInCart(request, couponCode.get("couponCode"));
-  return   response.getIsSuccess()? ResponseEntity.status(response.getStatusCode()).body(response) : ResponseEntity.status(response.getStatusCode()).body(response);
+  public ResponseEntity<ReqRes<Cart>> addCouponCode(HttpServletRequest request ,@RequestBody  Map<String , String> couponCode) throws Exception{
+      return couponCodeService.addCouponInCart(request, couponCode.get("couponCode"));
   }
   @GetMapping("/remove")
-  public ResponseEntity<ReqRes> removeCouponCode(HttpServletRequest request){
-    ReqRes response = couponCodeService.removeCouponCode(request);
-    return  response.getIsSuccess()? ResponseEntity.status(response.getStatusCode()).body(response) : ResponseEntity.status(response.getStatusCode()).body(response);
+  public ResponseEntity<ReqRes<Cart>> removeCouponCode(HttpServletRequest request) throws Exception{
+      return couponCodeService.removeCouponCode(request);
   }
 }

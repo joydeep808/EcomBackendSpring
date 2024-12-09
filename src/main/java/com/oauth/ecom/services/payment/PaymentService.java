@@ -2,13 +2,12 @@ package com.oauth.ecom.services.payment;
 
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oauth.ecom.dto.order.*;
 import com.oauth.ecom.entity.Cart;
 import com.oauth.ecom.entity.enumentity.PaymentType;
-import com.oauth.ecom.rabbitmq.MessageSender;
 import com.oauth.ecom.repository.CartRepo;
 import com.oauth.ecom.services.order.OrderService;
 // import com.oauth.ecom.services.kafka.KafkaService;
@@ -22,24 +21,22 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class PaymentService {
 
-  private final MessageSender messageSender;
   @Autowired
   CartRepo cartRepo;
   @Autowired
   JwtInterceptor jwtInterceptor;
   // @Autowired KafkaService kafkaService;
   private final RazorpayClient razorpayClient;
-  private final ObjectMapper objectMapper;
   private final OrderService orderService;
 
 
-  public ReqRes paymentRequest(HttpServletRequest httpServletRequest) throws Exception {
+  public ResponseEntity<ReqRes<PaymentRequestDto>> paymentRequest(HttpServletRequest httpServletRequest) throws Exception {
 
-    ReqRes response = new ReqRes();
+    ReqRes<PaymentRequestDto> response = new ReqRes<PaymentRequestDto>();
 
     // Get the user id from the JWT token
     long id = jwtInterceptor.getIdFromJwt(httpServletRequest);
-
+    String email  = jwtInterceptor.getEmailFromJwt(httpServletRequest);
     // Get the cart object for the given user id
     Cart cart = cartRepo.findByUser(id);
 
@@ -55,7 +52,7 @@ public class PaymentService {
 
     // Set the receipt of the order. We are using the user's email address as the
     // receipt.
-    orderRequest.put("receipt", cart.getUser().getEmail());
+    orderRequest.put("receipt", cart.getUser().getId().toString()+"USER");
 
     // Create a new order in Razorpay using the orderRequest JSONObject.
     Order order = razorpayClient.orders.create(orderRequest);
@@ -69,20 +66,17 @@ public class PaymentService {
 
     // Set the id of the order in the PaymentRequestDto object.
     paymentRequestDto.setId(order.get("id"));
-
+    paymentRequestDto.setEmail(email);
     // Set the currency of the order in the PaymentRequestDto object.
     paymentRequestDto.setCurrency(order.get("currency"));
 
     // Send the PaymentRequestDto object as the response to the client.
-    response.sendSuccessResponse(200, "Successfully done", paymentRequestDto);
-
-    return response;
+    return response.sendSuccessResponse(200, "Successfully done", paymentRequestDto).sendResponseEntity();
   }
 
-  public ReqRes processTheOrder(RazorpayTransectionIdsDto details) {
+  public ResponseEntity<ReqRes<Object>> processTheOrder(RazorpayTransectionIdsDto details) throws Exception {
     // Initialize the response object that will be used to send the result of the operation
-    ReqRes response = new ReqRes();
-    try {
+    ReqRes<Object> response = new ReqRes<Object>();
       // Process the order and save it to the database
       // The message to be sent to the queue has been commented out
       // messageSender.sendMessageToQueue(RabbitMqConfig.ORDER_TOPIC,
@@ -98,13 +92,8 @@ public class PaymentService {
       );
 
       // If the order is processed successfully, send a success response
-      response.sendSuccessResponse(200, "Order placed successfully done");
-      return response;
-    } catch (Exception e) {
-      // If an exception occurs, send an error response with the exception message
-      response.sendErrorMessage(500, "We are facing some issue", e.getMessage());
-      return response;
-    }
+     return response.sendSuccessResponse(200, "Order placed successfully done").sendResponseEntity();
+   
   }
 
   /**
@@ -114,29 +103,17 @@ public class PaymentService {
    * @return A response object containing the result of the refund operation
    * @throws Exception If there is an error during the refund operation
    */
-  public ReqRes refundMoney(String id) throws Exception {
+  public ResponseEntity<ReqRes<Object>> refundMoney(String id) throws Exception {
     // Create a new response object which will be used to send the result of the
     // refund operation
-    ReqRes response = new ReqRes();
+    ReqRes<Object> response = new ReqRes<>();
 
-    try {
       // Call the refund method of the Razorpay client
       // Pass the payment ID as a parameter
       razorpayClient.payments.refund(id);
       // If the refund is successful, send a success response
       // Set the status code to 200, and the message to "Payment was refunded"
-      response.sendSuccessResponse(200, "Payment was refunded");
-
-      // Return the response object
-      return response;
-    } catch (Exception e) {
-      // If an exception occurs, send an error response
-      // Set the status code to 400, and the message to the exception message
-      response.sendErrorMessage(400, "unexpected ", String.valueOf(e));
-
-      // Return the response object
-      return response;
-    }
+      return response.sendSuccessResponse(200, "Payment was refunded").sendResponseEntity();
   }
 
   public boolean fetchPaymentByOrderId(String id) {
@@ -148,16 +125,15 @@ public class PaymentService {
     }
   }
 
-  public ReqRes checkRefundStatus(String id) {
+  public ResponseEntity<ReqRes<Object>> checkRefundStatus(String id) throws RazorpayException {
     // Create a response object to encapsulate the result of the refund status check
-    ReqRes response = new ReqRes();
-    try {
+      ReqRes<Object> response = new ReqRes<>();
       // Fetch the refund status from the Razorpay client using the provided refund ID
       Refund refundStatus = razorpayClient.refunds.fetch(id);
 
       // Send a success response with the refund status
       // The status is retrieved from the refundStatus object
-      response.sendSuccessResponse(200, refundStatus.get("status"));
+     return  response.sendSuccessResponse(200, refundStatus.get("status")).sendResponseEntity();
 
       // Example of a refund status JSON response from Razorpay
       // {"speed_processed":"normal","amount":10000,"speed_requested":"optimum","notes":[],
@@ -166,14 +142,6 @@ public class PaymentService {
       // "id":"rfnd_NfXW1oidnhLNH9","entity":"refund","status":"processed"}
 
       // Return the response object containing the success status and refund details
-      return response;
-    } catch (Exception e) {
-      // In case of an exception, send an error response with the exception message
-      // The error message provides details about the failure
-      response.sendErrorMessage(500, e.getMessage());
-
-      // Return the response object containing the error details
-      return response;
-    }
+   
   }
 }

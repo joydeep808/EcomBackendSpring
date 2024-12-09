@@ -5,6 +5,7 @@ import java.util.*;
 
 import org.json.JSONObject;
 import org.springframework.data.domain.*;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oauth.ecom.dto.order.OrderDetailsSendDTO;
 import com.oauth.ecom.entity.*;
 import com.oauth.ecom.entity.enumentity.*;
+import com.oauth.ecom.mappers.cart.FindCartItemsForCheckout;
 import com.oauth.ecom.rabbitmq.MessageSender;
 import com.oauth.ecom.rabbitmq.RabbitMqConfig;
 import com.oauth.ecom.repository.*;
@@ -26,24 +28,22 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class OrderService {
   private final CartUtilService cartUtilService;
-  private JwtInterceptor jwtInterceptor;
-  private ProductRepo productRepo;
-  private CartRepo cartRepo;
-  private CartItemsRepo cartItemsRepo;
-  private UserRepo userRepo;
-  private OrderRepo orderRepo;
-  private OrderItemsRepo orderItemsRepo;
-  private AddressRepo addressRepo;
-  private CouponCodeRepo couponCodeRepo;
+  private final JwtInterceptor jwtInterceptor;
+  private final ProductRepo productRepo;
+  private final CartRepo cartRepo;
+  private final OrderRepo orderRepo;
+  private final OrderItemsRepo orderItemsRepo;
+  private final AddressRepo addressRepo;
+  private final CouponCodeRepo couponCodeRepo;
   private final MessageSender messageSender;
   private final ObjectMapper objectMapper;
+  private final CartItemsRepo cartItemsRepo;
   // @Autowired KafkaService kafkaService;
 
   @Transactional(rollbackFor = Exception.class)
-  public ReqRes purchaseAnOrder(long id, String order_payment_id, String paymentType) throws Exception {
-    try {
+  public ResponseEntity<ReqRes<Order>> purchaseAnOrder(long id, String order_payment_id, String paymentType) throws Exception {
       // Create a new response object to hold the result of the operation
-      ReqRes response = new ReqRes();
+      ReqRes<Order> response = new ReqRes<>();
 
       // Retrieve the cart for the given user ID
       Cart cart = cartRepo.findByUser(id);
@@ -52,26 +52,20 @@ public class OrderService {
       if (cart == null || cart.getCartItems().isEmpty()) {
         // If the cart is null or empty, send an error response indicating the user was not found
         // TODO: Add logic to refund the payment
-        response.sendErrorMessage(401, "User not found");
-        return response;
+        response.sendErrorMessage(404, "User not found").sendResponseEntity();
       }
-
+      List<FindCartItemsForCheckout> cartItemsForCheckout = cartItemsRepo.findCartItemsForCheckout(cart.getId());;
       // Retrieve the primary address for the given user ID
       Address address = addressRepo.findByPrimeryAddress(id);
 
       // Initialize and save the order using the retrieved address, cart, order payment ID, and payment type
-      Order savedOrder = initializeOrderAndSaveOrder(address, cart, order_payment_id, paymentType);
-
+      Order savedOrder = initializeOrderAndSaveOrder(address,cart ,  cartItemsForCheckout, order_payment_id, paymentType);
+      
       // Save the order items associated with the saved order and cart, using the specified payment type
-      saveOrderItems(savedOrder, cart, paymentType);
+      saveOrderItems( cart,  savedOrder,cartItemsForCheckout, paymentType);
 
       // If order processing is successful, send a success response with the saved order
-      response.sendSuccessResponse(200, "Successfully order placed", savedOrder);
-      return response;
-    } catch (Exception e) {
-      // If an exception occurs, throw a new exception indicating order processing failed
-      throw new Exception("Order processing failed");
-    }
+      return response.sendSuccessResponse(200, "Successfully order placed", savedOrder).sendResponseEntity();
   }
 
   public void getCouponCodeForOrder(CouponCode couponCode) {
@@ -80,7 +74,7 @@ public class OrderService {
   }
 
 
-  public Order initializeOrderAndSaveOrder(Address address, Cart cart, String order_payment_id, String paymentType) {
+  public Order initializeOrderAndSaveOrder(Address address,  Cart cart, List<FindCartItemsForCheckout> cartItemsForCheckouts, String order_payment_id, String paymentType) {
     // Create a new order and set its properties
     Order initializeOrder = new Order();
 
@@ -139,7 +133,7 @@ public class OrderService {
     return savedOrder;
   }
 
-  public void saveOrderItems(Order savedOrder, Cart cart, String paymentType) throws Exception {
+  public void saveOrderItems( Cart cart , Order savedOrder, List<FindCartItemsForCheckout> cartItemsForCheckouts, String paymentType) throws Exception {
     // First, get a list of all the cart item IDs
     List<Long> cartItemIds = new ArrayList<>();
     
@@ -148,26 +142,25 @@ public class OrderService {
     
     // Next, initialize an empty map to hold the products and their quantities that need to be updated in the products table
     Map<Long , Integer> updateProducts = new HashMap<>();
-    
     // Now, loop through the cart items in the cart
-    for (CartItems cartProducts : cart.getCartItems()) {
+    for (FindCartItemsForCheckout cartProducts : cartItemsForCheckouts) {
       // Create a new order item
       OrderItems orderProducts = new OrderItems();
       
       // Set the order (saved order) associated with this order item
-      orderProducts.setOrder(savedOrder);
+      orderProducts.setOrder(savedOrder.getId());
       
       // Set the quantity of this order item to the quantity of the cart product
       orderProducts.setQuantity(cartProducts.getQuantity());
       
       // Set the products associated with this order item to the product associated with the cart product
-      orderProducts.setProducts(cartProducts.getProduct());
+      orderProducts.setProducts(cartProducts.getProductId());
       
       // Set the total price of this order item to the quantity of the cart product times the price of the product
-      orderProducts.setTotalprice(cartProducts.getProduct().getPrice() * cartProducts.getQuantity());
+      orderProducts.setTotalprice(cartProducts.getProductPrice() * cartProducts.getQuantity());
       
       // Set the color of this order item to the color of the product
-      orderProducts.setColor(cartProducts.getProduct().getColor());
+      orderProducts.setColor(cartProducts.getColor());
       
       // Add the ID of the cart item to the list of cart item IDs
       cartItemIds.add(cartProducts.getId());
@@ -176,12 +169,14 @@ public class OrderService {
       orderItems.add(orderProducts);
       
       // Add the product and quantity to the map of products to update
-      updateProducts.put(cartProducts.getProduct().getId(), cartProducts.getQuantity());
+      updateProducts.put(cartProducts.getProductId(), cartProducts.getQuantity());
       
       // If the payment type is PAID, then update the stock of the product in the products table
-      if (paymentType.equals("PAID")) {
-        cartProducts.getProduct().setStock(cartProducts.getProduct().getStock() - cartProducts.getQuantity());
-      }
+      // if (paymentType.equals("PAID")) {
+      //   productQuantityUpdate.put(cartProducts.getProductId(), cartProducts.getQuantity());
+      //   //TODO: i have to update the stock
+      //   // cartProducts.getProductId().setStock(cartProducts.getProductQuantity() - cartProducts.getQuantity());
+      // }
     }
     
     // Send a message to the queue with the list of products and their quantities to update
@@ -236,10 +231,9 @@ public class OrderService {
     List<Order> orders = pageValues.getContent();
 
     // Create a list to hold the products that we need to update
-    List<Products> updateAbleProducts = new ArrayList<>();
     // Create a list to hold the orders that we need to update
     List<Order> updateAbleOrders = new ArrayList<>();
-
+    List<Products> updateAbleProducts = new ArrayList<>(); 
     // Loop through the orders
     for (Order order : orders) {
       // Update the payment type and status of the order
@@ -249,23 +243,28 @@ public class OrderService {
       order.setExpectedDeleveryDate(LocalDateTime.now().plusDays(10));
       // Get the list of order items associated with the order
       List<OrderItems> orderItems = orderItemsRepo.findByOrderId(order.getId());
+      List<Long> productIds = orderItems.stream().map(p-> p.getId()).toList();
+      List<Products> foundProducts =productRepo.findByProductsIds(productIds).orElse(null);
+      if (foundProducts ==null) {
+        return -2;
+      }
+      int length = productIds.size();
       // Loop through the order items
-      orderItems.stream().map(e -> {
-        // Update the quantity of the order item
-        e.setQuantity(e.getQuantity());
-        // Add the product to the list of products that need to be updated
-        updateAbleProducts.add(e.getProducts());
-        return null;
-      });
+     for (int index = 0; index <length ; index++) {
+        Products products = foundProducts.get(index);
+        OrderItems updateOrderItems = orderItems.get(index);
+        products.setStock(products.getStock() - updateOrderItems.getQuantity());
+      updateAbleProducts.add(products);
+     }
       // Add the order to the list of orders that need to be updated
       updateAbleOrders.add(order);
+      
     }
 
     // Save the updated orders to the database
     orderRepo.saveAll(updateAbleOrders);
     // Save the updated products to the database
     productRepo.saveAll(updateAbleProducts);
-
     // Return the total number of pages
     return pageValues.getTotalPages();
   }
@@ -325,7 +324,7 @@ public class OrderService {
   /// message indicating that the failed transection was saved
   /// and will be confirmed within 30 minutes.
   ///
-  public ReqRes handleFailedOrders(Map<String, String> value) {
+  public ResponseEntity<ReqRes<Object>> handleFailedOrders(Map<String, String> value) {
     // Create a JSONObject from the Map
     JSONObject jsonObject = new JSONObject();
     // Set the razorpay_order_id from the Map
@@ -337,12 +336,12 @@ public class OrderService {
     // Send the JSONObject to the Kafka topic
     // kafkaService.sendMessage("order_topic", jsonObject);
     // Create a ReqRes object to return
-    ReqRes response = new ReqRes();
+    ReqRes<Object> response = new ReqRes<>();
     // Set the success message
-    response.sendSuccessResponse(200,
-        "Successfully saved the failed transection and it will be conform within 30 minutes");
+    return response.sendSuccessResponse(200,
+        "Successfully saved the failed transection and it will be conform within 30 minutes").sendResponseEntity();
     // Return the ReqRes object
-    return response;
+    
   }
 
   // Show all the orders to the user
@@ -366,18 +365,18 @@ public class OrderService {
   // If the orders are not null and the list is not empty, it sets
   // the orders in the response with a 200 status code.
   //
-  public ReqRes getAlltheOrders(HttpServletRequest httpServletRequest) throws Exception {
-    ReqRes response = new ReqRes();
+  public ResponseEntity<ReqRes<List<OrderDetailsSendDTO>>> getAlltheOrders(HttpServletRequest httpServletRequest) throws Exception {
+    ReqRes<List<OrderDetailsSendDTO>> response = new ReqRes<>();
     long user = jwtInterceptor.getIdFromJwt(httpServletRequest);
 
     List<OrderDetailsSendDTO> orders = orderRepo.findOrders(user);
     if (orders == null || orders.isEmpty()) {
-      response.sendErrorMessage(404, "No Order found with the current user ");
-      return response;
+      return response.sendErrorMessage(404, "No Order found with the current user ").sendResponseEntity();
+      
     }
 
-    response.sendSuccessResponse(200, "Success", orders);
-    return response;
+    return response.sendSuccessResponse(200, "Success", orders).sendResponseEntity();
+    
   }
 
 }

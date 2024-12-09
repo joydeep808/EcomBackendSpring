@@ -24,12 +24,13 @@ public class Category {
   @CreatedDate
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
 
- private LocalDateTime createdAt;
-@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+  private LocalDateTime createdAt;
+  @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
 
   @LastModifiedDate
   private LocalDateTime updatedAt;
-  public Category(){
+
+  public Category() {
     this.createdAt = LocalDateTime.now();
     this.updatedAt = LocalDateTime.now();
   }

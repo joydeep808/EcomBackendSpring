@@ -1,11 +1,10 @@
 package com.oauth.ecom.services.user;
 
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,50 +25,39 @@ public class UserInfo {
   @Autowired
   private JwtInterceptor jwtInterceptor;
 
-  public ReqRes getOwnInfo(HttpServletRequest httpServletRequest){
-    ReqRes response = new ReqRes();
+  public ResponseEntity<ReqRes<UserEntity>> getOwnInfo(HttpServletRequest httpServletRequest) throws Exception{
+    ReqRes<UserEntity> response = new ReqRes<>();
 
-   try {
      String email =  jwtInterceptor.getEmailFromJwt(httpServletRequest);
      
     if (email.equals(null)) {
-      response.setStatusCode(401);
-      response.setMessage("Please login");
-      return response;
+      return response.sendErrorMessage(400 , "Please login").sendResponseEntity();
     }
     UserEntity user = userRepo.findByEmail(email);
     if (user.equals(null) || user == null ) {
-       response.sendErrorMessage(404,"User not found please login again ");
+       return response.sendErrorMessage(404,"User not found please login again ").sendResponseEntity();
     }
     else{
-      response.sendSuccessResponse(200 , "User details found" , user);
+      return response.sendSuccessResponse(200 , "User details found" , user).sendResponseEntity();
     }
-   } catch (Exception e) {
-    response.setStatusCode(500);
-   }
-    return response;
   }
 
-  public ReqRes updateInfo(HttpServletRequest httpServletRequest , UpdateDto updateDto){
-    ReqRes response = new ReqRes();
-  try {
+  public ResponseEntity<ReqRes<Object>> updateInfo(HttpServletRequest httpServletRequest , UpdateDto updateDto)  throws Exception{
+    ReqRes<Object> response = new ReqRes<Object>();
      final String email =  jwtInterceptor.getEmailFromJwt(httpServletRequest);
      if (email.equals(null)) {
-      response.setMessage("Please Login");
-      response.setStatusCode(401);
-      return response;
+
+      response.sendErrorMessage(401 , "Please Login");
       
      }
       UserEntity user = userRepo.findByEmail(email);
       if ( user == null || user.equals(null)) {
-        response.setMessage("User not found with this details ");
-        response.setStatusCode(404);
+        return response.sendErrorMessage(404 , "User not found with this details ").sendResponseEntity();
       }
       else{
         if (updateDto.getUsername().equals(null) && updateDto.getEmail().equals(null)) {
-          response.setMessage("Update not possible please give me one value");;
-          response.setStatusCode(400);
-          return response;
+          return response.sendErrorMessage(400 , "Update not possible please give me one value").sendResponseEntity();
+          
         }
         if (!updateDto.getUsername().equals(null) || !updateDto.getUsername().isEmpty()) {
             user.setUsername(updateDto.getUsername());
@@ -78,36 +66,26 @@ public class UserInfo {
           user.setEmail(updateDto.getEmail());
         }
         userRepo.save(user);
-        response.setStatusCode(200);
-        response.setMessage("User Update successfully done ");
+        return response.sendSuccessResponse(201 , "User Update successfully done ").sendResponseEntity();
       }
       
-  } catch (Exception e) {
-    response.setStatusCode(500);
-    response.setError(e.getMessage());
-    response.setMessage("We cannot reach our servers");
+  
   }
-  return response;
-  }
-  public ReqRes onlyUser(){
-    ReqRes response = new ReqRes();
-    response.setMessage("you are user ");
-    response.setStatusCode(200);
-    return response;
+  public ResponseEntity<ReqRes<String>> onlyUser(){
+    ReqRes <String>response = new ReqRes<>();
+    return response.sendSuccessResponse(200  , "you are user").sendResponseEntity();
+    
 
   }
 
-  public ReqRes AddRemoveImage(HttpServletRequest httpServletRequest ,MultipartFile avatar ){
-    ReqRes response = new ReqRes();
+  public ResponseEntity<ReqRes<String>> AddRemoveImage(HttpServletRequest httpServletRequest ,MultipartFile avatar ) throws Exception{
+    ReqRes<String> response = new ReqRes<>();
     String uploadDir = "./Uploads";
     
   String filename = StringUtils.cleanPath(avatar.getOriginalFilename());
-  try {
     if (filename.contains("..")) {
-      response.setMessage("Please provide the valid image ");
-      response.setStatusCode(400);
-
-      return response;
+      return  response.sendErrorMessage(400 , "Please provide the valid image ").sendResponseEntity();
+      
     }
     Path targetLocation = Paths.get(uploadDir).resolve(System.currentTimeMillis()+filename);
     Files.copy(avatar.getInputStream() , targetLocation);
@@ -115,15 +93,9 @@ public class UserInfo {
     UserEntity user = userRepo.findByEmail(email);
     user.setAvatar("/Uploads"+System.currentTimeMillis()+avatar.getOriginalFilename());
     userRepo.save(user);
-    response.setMessage("Image upload successfully done ");
-    response.setStatusCode(200);
-    return response;
-  } catch (Exception e) {
-    response.setMessage("We are not able to reach our servers");
-    response.setError(e.getMessage());
-    response.setStatusCode(500);
-    return response;
-  }
+    return response.sendErrorMessage(200 , "Image upload successfully done ").sendResponseEntity();
+    
+
   }
   // i have to implement email verification and also the reset password validation and other things also 
   

@@ -1,34 +1,40 @@
 package com.oauth.ecom.services.product;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.oauth.ecom.dto.product.CreateProductDto;
+import com.oauth.ecom.dto.product.ProductDto;
 import com.oauth.ecom.dto.product.UpdateProductDto;
 import com.oauth.ecom.entity.Category;
 import com.oauth.ecom.entity.Products;
+import com.oauth.ecom.mappers.ProductMapper;
 import com.oauth.ecom.repository.CategoryRepo;
 import com.oauth.ecom.repository.ProductRepo;
+import com.oauth.ecom.services.redis.RedisService;
 import com.oauth.ecom.util.ErrorException;
 import com.oauth.ecom.util.ReqRes;
+
+import lombok.RequiredArgsConstructor;
 
 
 
 
 @Service
+@RequiredArgsConstructor
 public class ProductServices {
   
-  @Autowired 
-  private ProductRepo productRepo;
-  @Autowired
-  private CategoryRepo categoryRepo;
+  
+  private final ProductRepo productRepo;
+  private final RedisService redisService;
+  private final CategoryRepo categoryRepo;
+
 
   /**
    * This method creates a new product in the database.
@@ -57,34 +63,27 @@ public class ProductServices {
    *                       can be the product that was saved, or an error
    *                       message.
    */
-  public ReqRes createProduct(CreateProductDto productDto) {
-    ReqRes response = new ReqRes();
+  public ResponseEntity<ReqRes<ProductMapper>> createProduct(CreateProductDto productDto) {
+    ReqRes<ProductMapper> response = new ReqRes<>();
     try {
-      // Check if the category id is null
-      if (Optional.ofNullable(productDto.getCategoryId()).isEmpty()) {
-        // If the category id is null, send a 400 error response
-        response.sendErrorMessage(400, "Category id is required" ,"Category id not be null" );
-        return response;
-      }
+     
       // Find the category by id
-      Optional<Category> category = categoryRepo.findById(productDto.getCategoryId());
+      Category category = categoryRepo.findByName(productDto.getCategoryName());
       // If the category is not found, send a 404 error response
-      if (category == null || category.isEmpty()) {
-        response.sendErrorMessage(404, "Category not found");
-        return response;
+      if (category == null) {
+        return response.sendErrorMessage(404, "Category not found").sendResponseEntity();
+        
       }
       // Check if a product with the same name already exists
       Products products = productRepo.findByName(productDto.getName());
       if (products != null) {
         // If a product with the same name already exists, send a 400 error response
-        response.setStatusCode(400);
-        response.setMessage("Product already saved with this name");
-        return response;
+       return  response.sendErrorMessage(400, "Product is already exist").sendResponseEntity();
       }
       // Create a new product
       Products product = Products.builder()
       .name(productDto.getName())
-      .category(category.get())
+      .category(category)
       .images(productDto.getImages())
       .originalPrice(productDto.getOriginalPrice())
       .price(productDto.getPrice())
@@ -92,41 +91,45 @@ public class ProductServices {
       .description(productDto.getDescription())
       .returnPeriod(productDto.getReturnPeriod())
       .color(productDto.getColor())
+      .rating(productDto.getRating())
+      .createdAt(LocalDateTime.now())
+      .updatedAt(LocalDateTime.now())
       .build();
+
       // Save the product
-      Products savedProducts = productRepo.save(product);
+     ProductMapper productMapper = (ProductMapper) productRepo.save(product);
       // Send a 200 success response with the saved product
-      response.sendSuccessResponse(200, "Product saved successfully done!" , savedProducts);
-      return response;
+      return response.sendSuccessResponse(200, "Product saved successfully done!"  , productMapper).sendResponseEntity();
+      
     } catch (Exception e) {
       // If an exception occurs, send a 500 error response
-      response.sendErrorMessage(500, "Server not reachable" , e.getLocalizedMessage());
-      return response;
+      return response.sendErrorMessage(500, "Server not reachable" ).sendResponseEntity();
+      
     }
   }
-  public ReqRes getProductById(Long id){
-    ReqRes response = new ReqRes();
-
-    try {
-      Products foundProduct = productRepo.findById(id).orElse(null);
+  public ResponseEntity<ReqRes<ProductDto>> getProductById(Long id){
+    ReqRes<ProductDto> response = new ReqRes<>();
+   Set<Object> value =  redisService.getMap(id.toString() ,ProductDto.class );
+   if (value != null && value.size() > 0) {
+    return response.sendSuccessResponse(200, "Product found successfully from redis" ,(ProductDto) value.stream().findFirst().get()).sendResponseEntity();
+   }
+      Products foundProduct =  productRepo.findById(id).orElse(null);
       if (foundProduct == null) {
-        response.sendErrorMessage(404, "Product not found with this id");
-        return response;
+        return response.sendErrorMessage(404, "Product not found with this id").sendResponseEntity();
+        
       }
-      response.sendSuccessResponse(200, "Product found successfully done!" , foundProduct);
-      return response;
-    } catch (Exception e) {
-      response.sendErrorMessage(500, "Server not reachable" , e.getLocalizedMessage());
-      return response;
-    }
+      ProductDto productDto = new ProductDto(foundProduct);
+      redisService.saveInSingleQuery(id.toString(), productDto, 60);
+      return response.sendSuccessResponse(200, "Product found successfully done!" , productDto).sendResponseEntity();
+      
   }
-  public ReqRes updateProduct(UpdateProductDto updateProductDto){
-    ReqRes response = new ReqRes();
+  public ResponseEntity<ReqRes<ProductMapper>> updateProduct(UpdateProductDto updateProductDto){
+    ReqRes<ProductMapper> response = new ReqRes<>();
     // First check if the updateProductDto is null
     if (updateProductDto == null) {
       // If it is null, send a 400 error response
-      response.sendErrorMessage(400, "Please provide atleast 1 value to update");
-      return response;
+      return response.sendErrorMessage(400, "Please provide atleast 1 value to update").sendResponseEntity();
+      
     }
     try {
       // Find the product by id
@@ -138,8 +141,8 @@ public class ProductServices {
         // If the product is not null, that means the name is already taken
         if (product != null) {
           // Send a 400 error response
-          response.sendErrorMessage(400, "Product name is already store");
-          return response;
+          return response.sendErrorMessage(400, "Product name is already store").sendResponseEntity();
+          
         }
         else{
           // Set the name of the found product
@@ -166,54 +169,46 @@ public class ProductServices {
       // Check if the description is not null
       Optional.ofNullable(updateProductDto.getDescription()).ifPresent(foundProduct::setDescription);
       // Save the found product
-      Products savedProduct = productRepo.save(foundProduct);
+      ProductMapper savedProduct =(ProductMapper) productRepo.save(foundProduct);
       // Send a 200 success response with the saved product
-      response.sendSuccessResponse(200, "Update successfully done!" , savedProduct);
-      return response;
+      return response.sendSuccessResponse(200, "Update successfully done!" , savedProduct).sendResponseEntity();
+      
 
     } catch (Exception e) {
       // If an exception occurs, send a 500 error response
-      response.sendErrorMessage(500, e.getMessage());
-      return response;
+      return response.sendErrorMessage(500, e.getMessage()).sendResponseEntity();
+      
     }
   }
-  public ReqRes getProductByName(String name){
-    ReqRes response =  new ReqRes();
-    try {
-       List<Products> foundProducts =  productRepo.findByNameRegex(name);
+    public ResponseEntity<ReqRes<List<ProductMapper>>> getProductByName(String name){
+    
+    ReqRes<List<ProductMapper>> response =  new ReqRes<>();
+       List<ProductMapper> foundProducts =  productRepo.findByNameRegex(name);
 
        if (foundProducts== null || foundProducts.isEmpty() || foundProducts.size()  == 0) {
-        response.sendErrorMessage(404, "No Product found");
-        return response;
+        return response.sendErrorMessage(404, "No Product found").sendResponseEntity();
+        
        }
-       response.sendSuccessResponse(200, "Products found successfully done" , foundProducts);
-       return response;
-    } catch (Exception e) {
-      response.sendErrorMessage(500, e.getMessage());
-    return response;
-    }
+       return response.sendSuccessResponse(200, "Products found successfully done" , foundProducts).sendResponseEntity();
+       
   }
-  public ReqRes getProductsByCategory(String categoryName) throws ErrorException{
-    ReqRes response = new ReqRes();
-    try {
+  public ResponseEntity<ReqRes<List<ProductMapper>>> getProductsByCategory(String categoryName) throws ErrorException{
+    ReqRes<List<ProductMapper>> response = new ReqRes<>();
     Category category =   categoryRepo.findByName(categoryName);
     if (category == null) {
       throw new ErrorException("Category not found" ,404);
     }
-   List<Products> products =  productRepo.findByCategory(category);
+   List<ProductMapper> products =  productRepo.findByCategory(category);
    if ( products == null || products.size() == 0) {
     throw new ErrorException("No Products found with this category" , 404);
    }
-   response.sendSuccessResponse(200, "Products found successfully done" , products);;
-   return response;
-    } catch (ErrorException e ) {
-      throw new ErrorException(e.getMessage() , e.getStatusCode());
-    }
+   return response.sendSuccessResponse(200, "Products found successfully done" , products).sendResponseEntity();
+   
   }
   
   
-  public ReqRes getAllProducts(int pageNumber, int size, String field) {
-    ReqRes response = new ReqRes();
+  public ResponseEntity<ReqRes<List<ProductMapper>>> getAllProducts(int pageNumber, int size, String field) {
+    ReqRes<List<ProductMapper>> response = new ReqRes<>();
     
     // Ensure page number is not negative, adjust to zero-based index for pagination
     pageNumber = pageNumber < 0 ? 0 : pageNumber - 1;
@@ -225,16 +220,15 @@ public class ProductServices {
     Pageable pageable = PageRequest.of(pageNumber, size, sort);
     
     // Retrieve a page of products from the repository using the pageable object
-    Page<Products> pagePost = this.productRepo.findAll(pageable);
+    Page<ProductMapper> pagePost = this.productRepo.findAllProductsInRandom(pageable);
     
     // Extract the list of products from the page
-    List<Products> allProducts = pagePost.getContent();
+    List<ProductMapper> allProducts = pagePost.getContent();
     
     // Send a success response with the list of products
-    response.sendSuccessResponse(200, "Products found successfully done!", allProducts);
+    return response.sendSuccessResponse(200, "Products found successfully done!", allProducts).sendResponseEntity();
     
-    // Return the response object
-    return response;
+    
   }
 
 }

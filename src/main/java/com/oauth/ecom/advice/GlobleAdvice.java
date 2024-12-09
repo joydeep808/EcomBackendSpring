@@ -5,6 +5,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.oauth.ecom.entity.exceptions.MainException;
 import com.oauth.ecom.util.ErrorException;
 import com.oauth.ecom.util.ReqRes;
 
@@ -44,16 +45,17 @@ errors.put("errors", ex.getConstraintViolations().stream()
 return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
 }
 @ExceptionHandler(Exception.class)
-public ResponseEntity<ReqRes> handleException(Exception ex){
-  ReqRes response = new ReqRes();
-  response.sendErrorMessage(500,"Internal server error",ex.getMessage() );
-  return ResponseEntity.status(500).body(response);
+public ResponseEntity<ReqRes<Object>> handleException(Exception ex){
+  return new ReqRes<Object>().sendErrorMessage(500,ex.getLocalizedMessage() ).sendResponseEntity();
 }
 @ExceptionHandler(ErrorException.class)
-public ResponseEntity<ReqRes> handleErrorException(ErrorException ex){
-  ReqRes response = new ReqRes();
-  response.sendErrorMessage(ex.getStatusCode(),ex.getMessage() );
-  return ResponseEntity.status(ex.getStatusCode()).body(response);
+public ResponseEntity<ReqRes<Object>> handleErrorException(ErrorException ex){
+  return new ReqRes<Object>().sendErrorMessage(ex.getStatusCode(),ex.getMessage() ).sendResponseEntity();
+}
+@ExceptionHandler(MainException.class)
+public ResponseEntity<ReqRes<Object>> handleMainException(MainException e){
+  return new ReqRes<>().sendErrorMessage(e.getStatusCode(), e.getMessage()).sendResponseEntity();
+
 }
 
 }

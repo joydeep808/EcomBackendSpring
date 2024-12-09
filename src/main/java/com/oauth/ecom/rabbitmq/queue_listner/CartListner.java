@@ -19,7 +19,12 @@ public class CartListner {
   private final ObjectMapper objectMapper;
   @RabbitListener(queues = RabbitMqConfig.CART_QUEUE)
   public void cartListner(String message) throws JsonMappingException, JsonProcessingException{
-      ProductParseDto productParseDto = objectMapper.readValue(message, ProductParseDto.class);
-      cartService.updateCart(productParseDto);
+     try {
+       ProductParseDto productParseDto = objectMapper.readValue(message, ProductParseDto.class);
+       cartService.updateCart(productParseDto);
+     } catch (Exception e) {
+      System.out.println(e.getMessage());
+      // TODO: handle exception
+     }
   }
 }

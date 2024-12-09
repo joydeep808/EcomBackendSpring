@@ -1,62 +1,58 @@
 package com.oauth.ecom.util;
 
-import java.util.List;
-
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.oauth.ecom.entity.Products;
-import com.oauth.ecom.entity.UserEntity;
 
 import lombok.Data;
 @Data
 @JsonIgnoreProperties(ignoreUnknown=true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Component
-public class ReqRes {
+public class ReqRes<T> {
   private int statusCode;
   private String message;
-  private String error;
   private Boolean isSuccess;
-  private String token;
-  private String refreshToken;
-  private String expirationDate;
-  private String name;
-  private String eamil;
-  private String password;
-  private String username;
-  private UserEntity user;
-  private Products products;
-  private List<Products> allProducts;
-  private Object data;
+  private T data;
   public ReqRes(){
     this.isSuccess = false;
   }
   
-  public void sendSuccessResponse(int statusCode , String message ){
+  public ReqRes<T> sendSuccessResponse(int statusCode , String message ){
     this.statusCode  = statusCode;
     this.message = message;
     this.isSuccess = true;
-    
+    return this;
   }
-  public <T> void sendSuccessResponse(int statusCode , String message , T data ){
+
+  public ReqRes<T> sendSuccessResponse(int statusCode , String message , T data ){
     this.statusCode  = statusCode;
     this.message = message;
     this.isSuccess = true;
     this.data = data;
-    
+    return this;
   }
-  public void  sendErrorMessage (int statusCode , String message , String error){
-    this.statusCode =statusCode;
-    this.message =message;
-    this.error =error;
-    this.isSuccess = false;
-  }
-  public void  sendErrorMessage (int statusCode , String message ){
+
+
+  public ReqRes<T>  sendErrorMessage (int statusCode , String message ){
     this.statusCode =statusCode;
     this.message =message;
     this.isSuccess = false;
+    return this;
   }
+
+  public ReqRes<T>  sendErrorMessage (int statusCode , String message ,  T data ){
+    this.statusCode =statusCode;
+    this.message =message;
+    this.data = data;
+    this.isSuccess = false;
+    return this;
+  }
+  public ResponseEntity<ReqRes<T>> sendResponseEntity(){
+    return ResponseEntity.status(statusCode).body(this);
+  }
+
   
 }

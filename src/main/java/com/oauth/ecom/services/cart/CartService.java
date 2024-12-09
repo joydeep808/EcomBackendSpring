@@ -2,22 +2,23 @@ package com.oauth.ecom.services.cart;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.oauth.ecom.dto.cart.AddCartQuantityDto;
-import com.oauth.ecom.dto.cart.DecrementCartQuantityDto;
+import com.oauth.ecom.dto.cart.*;
 import com.oauth.ecom.dto.product.ProductParseDto;
 import com.oauth.ecom.entity.*;
+import com.oauth.ecom.entity.exceptions.thrown_exception.NotFoundException;
+import com.oauth.ecom.mappers.cart.CartItemsMapper;
+import com.oauth.ecom.mappers.cart.CartMapper;
 import com.oauth.ecom.rabbitmq.MessageSender;
 import com.oauth.ecom.rabbitmq.RabbitMqConfig;
 import com.oauth.ecom.repository.*;
 // import com.oauth.ecom.services.kafka.KafkaService;
 import com.oauth.ecom.services.redis.RedisService;
-import com.oauth.ecom.util.JwtInterceptor;
-import com.oauth.ecom.util.ReqRes;
+import com.oauth.ecom.util.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -35,40 +36,24 @@ public class CartService {
 
   // private KafkaService kafkaService;
 
-  /**
-   * This function is responsible for adding a product to a user's cart.
-   * 
-   * @param httpServletRequest The HTTP request from which we can extract the
-   *                           user's ID.
-   * @param cartItemsDto       The product ID and quantity that the user wants to
-   *                           add to their cart.
-   * 
-   * @return A response object that contains the status code and a message.
-   * 
-   * @throws Exception If there is an error while processing the request.
-   */
-  public ReqRes addProductInCart(HttpServletRequest httpServletRequest, AddCartQuantityDto cartItemsDto) {
-    ReqRes response = new ReqRes();
-    try {
+  public ResponseEntity<ReqRes<Object>> addProductInCart(HttpServletRequest httpServletRequest, AddCartQuantityDto cartItemsDto) throws Exception{
+    ReqRes<Object> response = new ReqRes<>();
       // First, we need to find the product that the user wants to add to their cart.
       Products product = productRepo.findById(cartItemsDto.getProductId()).orElse(null);
       if (product == null) {
         // If the product doesn't exist, we return a 404 error.
-        response.sendErrorMessage(404, "Product not found");
-        return response;
+        return response.sendErrorMessage(404, "Product not found").sendResponseEntity();
       }
       // Check if the product is out of stock.
       if (product.getStock() <= 0) {
         // If the product is out of stock, we return a 400 error.
-        response.sendErrorMessage(400, "Product is out of stock");
-        return response;
+        return response.sendErrorMessage(400, "Product is out of stock").sendResponseEntity();
       }
       // Check if the user is trying to add more than the product has in stock.
       if (product.getStock() - cartItemsDto.getQuantity() < 0) {
         // If the user is trying to add more than the product has in stock,
         // we return a 400 error.
-        response.sendErrorMessage(400, "Please try again with an lower stock");
-        return response;
+        return response.sendErrorMessage(400, "Please try again with an lower stock").sendResponseEntity();
       }
       // Extract the user's ID from the request.
       Long user = (long) jwtInterceptor.getIdFromJwt(httpServletRequest);
@@ -80,19 +65,12 @@ public class CartService {
       messageSender.sendMessageToQueue(RabbitMqConfig.CART_QUEUE, objectMapper.writeValueAsString(productDetails));
       // kafkaService.sendMessage("cart_topic" , productDetails );
       // Return a success response with a message.
-      response.sendSuccessResponse(200, "Cart will be updated shortly");
-      return response;
-    } catch (Exception e) {
-      // If there is an error while processing the request, we return a 500 error with
-      // the message.
-      response.sendErrorMessage(500, e.getMessage());
-      return response;
+      return response.sendSuccessResponse(200, "Cart will be updated shortly").sendResponseEntity();
     }
-  }
 
   @Transactional(rollbackFor = Exception.class)
-  public ReqRes removeProductFromCart(HttpServletRequest httpServletRequest) throws Exception {
-    ReqRes response = new ReqRes();
+  public ResponseEntity<ReqRes<Object>> removeProductFromCart(HttpServletRequest httpServletRequest) throws Exception {
+    ReqRes<Object> response = new ReqRes<>();
 
     // Extract the user's ID from the request.
     Long id = (long) jwtInterceptor.getIdFromJwt(httpServletRequest);
@@ -100,7 +78,7 @@ public class CartService {
     Cart cart = cartRepo.findByUser(id);
     // If the cart is empty, return a 400 error.
     if (cart.getCartItems().size() == 0) {
-      throw new Exception("No Products found to remove");
+      throw new NotFoundException("No Products found to remove" , 404);
     }
     // Get all the cart items from the cart.
     List<CartItems> cartItems = cart.getCartItems();
@@ -114,68 +92,57 @@ public class CartService {
     // Save the cart.
     cartRepo.save(cart);
     // Return a success response with a message.
-    response.sendSuccessResponse(200, "Successfully removed");
-    return response;
+    return response.sendSuccessResponse(200, "Successfully removed").sendResponseEntity();
 
   }
 
   @Transactional
-  public ReqRes decrementCartQuantity(HttpServletRequest httpServletRequest, DecrementCartQuantityDto cartQuantityDto)
+  public ResponseEntity<ReqRes<Cart>> decrementCartQuantity(HttpServletRequest httpServletRequest, DecrementCartQuantityDto cartQuantityDto)
       throws Exception {
-    ReqRes response = new ReqRes();
-    try {
+    ReqRes<Cart> response = new ReqRes<>();
       // Get the user ID from the request.
       long userId = jwtInterceptor.getIdFromJwt(httpServletRequest);
 
       // Find the user's cart.
       Cart cart = cartRepo.findByUser(userId);
 
-      // If the cart does not exist, return a 401 error.
+      // If the cart does not exist, return a 404 error.
       if (cart == null || cart.getCartItems().isEmpty()) {
-        response.sendErrorMessage(401, "We are having some issue");
-        return response;
+        throw new NotFoundException("Cart not found", 404);
       }
 
       // Stream the cart items and check if a product matches the ID we are looking
       // for.
       // If a match is found, decrement the quantity and update the cart total.
       // Save the updated cart.
-      boolean isCartUpdated = cart.getCartItems().stream()
-          .filter(pro -> pro.getProduct().getId() == cartQuantityDto.getProductId()).findFirst().map(p -> {
-            p.setQuantity(p.getQuantity() - 1);
-            cart.setCartTotal(cart.getCartTotal() - p.getProduct().getPrice());
-            cartRepo.save(cart);
-            return true;
-          }).orElse(false);
+      // boolean isCartUpdated = cart.getCartItems().stream()
+      //     .filter(pro -> pro.getProduct().getId() == cartQuantityDto.getProductId()).findFirst().map(p -> {
+      //       p.setQuantity(p.getQuantity() - 1);
+      //       cart.setCartTotal(cart.getCartTotal() - p.getProduct().getPrice());
+      //       cartRepo.save(cart);
+      //       return true;
+      //     }).orElse(false);
 
       // If the cart was updated, return a 200 success response with the updated cart.
       // Otherwise, return a 404 error.
-      if (isCartUpdated) {
-        response.sendSuccessResponse(200, "Quantity decrement successfully done!", cart);
-        return response;
-      }
-      response.sendErrorMessage(404, "Product not found to decrement the quantity");
-      return response;
+      // if (isCartUpdated) {
+      //   return response.sendSuccessResponse(200, "Quantity decrement successfully done!", cart).sendResponseEntity();
+      // }
+      return response.sendErrorMessage(404, "Product not found to decrement the quantity").sendResponseEntity();
 
-    } catch (Exception e) {
-      // If there is an error, return a 500 error with the error message.
-      response.sendErrorMessage(500, e.getMessage());
-      throw new Exception(e.getMessage());
-    }
   }
 
-  public ReqRes getCartInfo(HttpServletRequest httpServletRequest) {
-    ReqRes response = new ReqRes();
-    try {
+  public ResponseEntity<ReqRes<List<CartItems>>> getCartInfo(HttpServletRequest httpServletRequest) throws Exception{
+    ReqRes<List<CartItems>> response = new ReqRes<>();
       // Get the user's ID from the JWT token in the HTTP request.
       Long id = (long) jwtInterceptor.getIdFromJwt(httpServletRequest);
 
       // Check if the user's cart is in the redis cache.
       // If the cart is in the cache, return it to the user.
-      Object CacheCartInfo = redisService.getData("CART" + id, Object.class);
+      @SuppressWarnings("unchecked")
+      List<CartItems> CacheCartInfo =(List<CartItems>) redisService.getData("CART" + id,Object.class);
       if (CacheCartInfo != null) {
-        response.sendSuccessResponse(200, "Cart Products found from redis", CacheCartInfo);
-        return response;
+       return  response.sendSuccessResponse(200, "Cart Products found from redis", CacheCartInfo).sendResponseEntity();
       }
 
       // If the cart is not in the cache, find the user's cart in the database.
@@ -184,24 +151,15 @@ public class CartService {
       // If the cart does not exist in the database, or if it is empty, return a 400
       // error.
       if (cartinfo == null || cartinfo.getCartItems().isEmpty() || cartinfo.getCartItems().size() == 0) {
-        response.setMessage("Empty Cart");
-        response.setStatusCode(400);
-        return response;
+        return response.sendErrorMessage(404, "Empty Cart").sendResponseEntity();
       }
 
       // Save the user's cart in the redis cache.
       redisService.saveInSingleQuery("CART" + id, cartinfo.getCartItems(), 20);
 
       // Return the user's cart.
-      response.sendSuccessResponse(200, "Cart Products found from redis", cartinfo.getCartItems());
-      return response;
+      return response.sendSuccessResponse(200, "Cart Products found from redis", cartinfo.getCartItems()).sendResponseEntity();
 
-    } catch (Exception e) {
-      // If there is an error, return a 500 error with the error message.
-      response.sendErrorMessage(500, e.getMessage());
-      response.setStatusCode(500);
-      return response;
-    }
   }
 
   public Boolean updateCart(ProductParseDto valueObject) {
@@ -211,35 +169,26 @@ public class CartService {
 
       // Find the user's cart.
       Cart cart = cartRepo.findByUser(user);
-
       // If the cart doesn't exist, or if it is empty, return.
-      if (cart == null || cart.getCartItems() == null) {
+      if (cart == null) {
         return false;
-      }
-
+      } 
+      List<CartItemsMapper> foundCartItems = cartItemsRepo.findCartItemsProducts(cart.getId());;
       // Check if the product is already in the user's cart.
-      boolean isProductAlredySave = cart.getCartItems().stream().
-      // Filter the cart items to find the product with the same ID as the one in the
-      // value object.
-          filter(pro -> pro.getProduct().getId() == valueObject.getProductId()).
-          // If the product exists, update the quantity and the cart total.
-          findFirst().map(p -> {
-            // Increment the quantity of the product by the quantity in the value object.
-            p.setQuantity(p.getQuantity() + valueObject.getQuantity());
-            // Update the cart total.
-            float total = cart.getCartTotal() + (valueObject.getQuantity() * p.getProduct().getPrice());
-            cart.setCartTotal(total);
-            // Update the discounted cart total.
-            cart.setDiscountCartTotal(total);
-            // Return true to indicate that the product was found and updated.
-            return false;
-          }).orElse(false);
-
-      // If the product was found and updated, save the cart and return.
-      if (isProductAlredySave) {
-        cartRepo.save(cart);
-        return false;
-      }
+     if (foundCartItems.size() > 0) {
+        for (CartItemsMapper cartItems : foundCartItems) {
+          // If the product is already in the cart, update the quantity.
+          if (cartItems.getProductId().equals(valueObject.getProductId())) {
+            CartItems existingCartItems = cartItemsRepo.findByCartIdAndProduct(cart.getId(), valueObject.getProductId().longValue());
+            existingCartItems.setQuantity(existingCartItems.getQuantity() + valueObject.getQuantity());
+           float total = cartItems.getProductPrice() * valueObject.getQuantity();
+            cart.setCartTotal(cart.getCartTotal() + total);
+            cart.setDiscountCartTotal(cart.getDiscountCartTotal() +total);
+            cartRepo.save(cart);
+            return true; 
+          }
+        }
+     }
 
       // If the product was not found, find the product in the database.
       Products product = productRepo.findById(valueObject.getProductId()).orElse(null);
@@ -251,9 +200,9 @@ public class CartService {
 
       // Create a new cart item and set its product and cart.
       CartItems cartItems = new CartItems();
-      cartItems.setProduct(product);
-      cartItems.setCart(cart);
-
+      cartItems.setProductId(valueObject.getProductId());
+      cartItems.setCart(cart.getId());
+      
       // If the stock of the product is less than the quantity in the value object,
       // set the quantity of the cart item to 1.
       // Otherwise, set the quantity of the cart item to the quantity in the value
@@ -268,9 +217,9 @@ public class CartService {
       cartItemsRepo.saveAndFlush(cartItems);
 
       // Update the cart total.
-      float total = cartItems.getQuantity() * cartItems.getProduct().getPrice();
-      cart.setCartTotal(total);
-      cart.setDiscountCartTotal(total);
+      float total = cartItems.getQuantity() * product.getPrice();
+      cart.setCartTotal(cart.getCartTotal() + total);
+      cart.setDiscountCartTotal(cart.getDiscountCartTotal()+total);
 
       // Save the cart.
       cartRepo.save(cart);

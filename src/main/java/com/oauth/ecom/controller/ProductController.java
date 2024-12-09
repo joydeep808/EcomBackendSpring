@@ -1,71 +1,59 @@
 package com.oauth.ecom.controller;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import com.oauth.ecom.dto.product.CreateProductDto;
-import com.oauth.ecom.dto.product.UpdateProductDto;
+import com.oauth.ecom.dto.product.*;
+import com.oauth.ecom.entity.Products;
+import com.oauth.ecom.mappers.ProductMapper;
 import com.oauth.ecom.services.product.ProductServices;
-import com.oauth.ecom.util.ErrorException;
-import com.oauth.ecom.util.ReqRes;
-
+import com.oauth.ecom.util.*;
 import jakarta.validation.Valid;
 
-
-
-
-
-
-@Controller
 @RestController
 @RequestMapping("/api/v1/product")
 public class ProductController {
-  @Autowired ProductServices productServices;
-  
+  @Autowired
+  ProductServices productServices;
 
   @PostMapping("/create")
-  public ResponseEntity<ReqRes> createProduct(@RequestBody @Valid CreateProductDto products){
-    ReqRes response = productServices.createProduct(products);
-    return   response.getIsSuccess()? ResponseEntity.status(response.getStatusCode()).body(response) : ResponseEntity.status(response.getStatusCode()).body(response);
+  public ResponseEntity<ReqRes<ProductMapper>> createProduct(@RequestBody @Valid CreateProductDto products) {
+
+    return productServices.createProduct(products);
   }
+
+
   @PutMapping("/update")
-  public ResponseEntity<ReqRes> updateProduct(@RequestBody UpdateProductDto updateProductDto){
-    ReqRes response = productServices.updateProduct(updateProductDto);
-    return   response.getIsSuccess()? ResponseEntity.status(response.getStatusCode()).body(response) : ResponseEntity.status(response.getStatusCode()).body(response);
+  public ResponseEntity<ReqRes<ProductMapper>> updateProduct(@RequestBody UpdateProductDto updateProductDto) {
+    return productServices.updateProduct(updateProductDto);
   }
-  @GetMapping("/{id}")
-  public ResponseEntity<ReqRes> getProductById(@PathVariable Long id){
-    ReqRes response = productServices.getProductById(id);
-    return   response.getIsSuccess()? ResponseEntity.status(response.getStatusCode()).body(response) : ResponseEntity.status(response.getStatusCode()).body(response);
+
+
+  @GetMapping("/id")
+  public ResponseEntity<ReqRes<ProductDto>> getProductById(@RequestParam("productId") Long id) {
+    return productServices.getProductById(id);
   }
-  @GetMapping("/p/{name}")
-  public ResponseEntity<ReqRes> getProductByName(@PathVariable String name) {
-    ReqRes response = productServices.getProductByName(name);
-    return   response.getIsSuccess()? ResponseEntity.status(response.getStatusCode()).body(response) : ResponseEntity.status(response.getStatusCode()).body(response);
+
+  @GetMapping("/name")
+  public ResponseEntity<ReqRes<List<ProductMapper>>> getProductByName(@RequestParam("name") String name) {
+    return productServices.getProductByName(name);
   }
+
   @GetMapping("/p/category")
-  public ResponseEntity<ReqRes> getProductsByCategory(@RequestParam(value = "name" ,required = true, defaultValue = "") String name )throws ErrorException {
-    ReqRes response = productServices.getProductsByCategory(name);
-    return   response.getIsSuccess()? ResponseEntity.status(response.getStatusCode()).body(response) : ResponseEntity.status(response.getStatusCode()).body(response);
+  public ResponseEntity<ReqRes<List<ProductMapper>>> getProductsByCategory(
+      @RequestParam(value = "name", required = true, defaultValue = "") String name) throws ErrorException {
+    return productServices.getProductsByCategory(name);
   }
-  
+
   @GetMapping("/p/all")
-  public ResponseEntity<ReqRes> getAllProducts(
-    @RequestParam(value = "page" ,defaultValue = "1",required = false ) Integer page,
-    @RequestParam(value = "size" ,defaultValue = "10",required = false ) Integer size,
-    @RequestParam(value = "field" ,defaultValue = "",required = false ) String field
-  )throws ErrorException{
-    ReqRes response = productServices.getAllProducts(page,size,field);
-    return ResponseEntity.status(response.getStatusCode()).body(response);
+  public ResponseEntity<ReqRes<List<ProductMapper>>> getAllProducts(
+      @RequestParam(value = "page", defaultValue = "1", required = false) Integer page,
+      @RequestParam(value = "size", defaultValue = "30", required = false) Integer size,
+      @RequestParam(value = "field", defaultValue = "", required = false) String field) throws ErrorException {
+    return productServices.getAllProducts(page, size, field);
   }
 
 }

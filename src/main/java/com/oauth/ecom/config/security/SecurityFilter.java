@@ -12,20 +12,20 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityFilter {
+ 
   @Autowired
   private AuthenticationProvider authenticationProvider;
-  @Autowired
-  private JwtConfig jwtConfig;
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
@@ -41,58 +41,62 @@ public class SecurityFilter {
         .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authenticationProvider(authenticationProvider)
         .authorizeHttpRequests(authConfig -> {
-          authConfig.requestMatchers(defaultUrl+"/" ,
-          defaultUrl+"/user/login",
-          defaultUrl+"/user/register"
-          ).permitAll();
-          // Admin Route
-          //Product Routes
-          authConfig.requestMatchers(HttpMethod.GET ,
-          "/api/v1/user/private").hasAnyAuthority("ADMIN");
-          authConfig.requestMatchers(
-          ProductMappingUrl+"/update" ,
-          defaultUrl+"/user/private" ,
-          ProductMappingUrl+"/create" ,
-          defaultUrl+"/user/avatar" ,
-          defaultUrl+"/user/update",
-          categoryMappingUrl+"/create",
-          categoryMappingUrl+"/update",
-          CouponCodeMapping+"/create"
-          ).permitAll();
-          authConfig.requestMatchers(HttpMethod.POST ,
-          "/api/v1/c/create").permitAll();
-          /// Category Routes
+          authConfig.anyRequest().permitAll();
+          // authConfig.requestMatchers(defaultUrl+"/" ,
+          // defaultUrl+"/user/login",
+          // defaultUrl+"/user/register",
+          // defaultUrl+"/user/*"
+          // ).permitAll();
+          // // Admin Route
+          // //Product Routes
+          // authConfig.requestMatchers(HttpMethod.GET ,
+          // "/api/v1/user/private").hasAnyAuthority("ADMIN");
+          // authConfig.requestMatchers(
+          // ProductMappingUrl+"/update" ,
+          // defaultUrl+"/user/private" ,
+          // ProductMappingUrl+"/create" ,
+          // defaultUrl+"/user/avatar" ,
+          // defaultUrl+"/user/update",
+          // categoryMappingUrl+"/create",
+          // categoryMappingUrl+"/update",
+          // CouponCodeMapping+"/create"
+          // ).permitAll();
+          // authConfig.requestMatchers(HttpMethod.POST ,
+          // "/api/v1/c/create").permitAll();
+          // /// Category Routes
 
-          // User And Admin Both have the access
-          authConfig.requestMatchers(defaultUrl+"/user/avatar" ,
-          defaultUrl+"/user/update",
-          defaultUrl+"/user/info" ,
-          defaultUrl+"/user/info",
-          categoryMappingUrl+"/{name}",
-          ProductMappingUrl+"/{id}",
-          ProductMappingUrl+"/{id}",
-          CartMapping+"add" ,
-          CartMapping+"delete" ,
-          CartMapping+"get",
-          AddressMapping+"/create",
-          AddressMapping+"/update",
-          AddressMapping+"/get",
-          OrderMapping+"/buy",
-          CouponCodeMapping+"/add",
-          CouponCodeMapping+"/remove"
-          ).permitAll();
+          // // User And Admin Both have the access
+          // authConfig.requestMatchers(defaultUrl+"/user/avatar" ,
+          // defaultUrl+"/user/update",
+          // defaultUrl+"/user/info" ,
+          // defaultUrl+"/user/info",
+          // categoryMappingUrl+"/{name}",
+          // ProductMappingUrl+"/{id}",
+          // ProductMappingUrl+"/{id}",
+          // CartMapping+"add" ,
+          // CartMapping+"delete" ,
+          // CartMapping+"get",
+          // AddressMapping+"/create",
+          // AddressMapping+"/update",
+          // AddressMapping+"/get",
+          // OrderMapping+"/buy",
+          // CouponCodeMapping+"/add",
+          // CouponCodeMapping+"/remove"
+          // ).permitAll();
 
-          // Any user can access this routes
-          authConfig.requestMatchers(ProductMappingUrl+"/p/{name}" ,
-          ProductMappingUrl+"/{id}",
-          ProductMappingUrl+"/p/r/all",
-          ProductMappingUrl+"/p/{name}" ,
-          ProductMappingUrl+"/p/c/{category}",
-          ProductMappingUrl+"/p/{page}/{maxProducts}",
-          OrderMapping+"/request",
-          OrderMapping+"/callback"
+          // // Any user can access this routes
+          // authConfig.requestMatchers(ProductMappingUrl+"/p/{name}" ,
+          // ProductMappingUrl+"/{id}",
+          // ProductMappingUrl+"/p/r/all",
+          // ProductMappingUrl+"/p/{name}" ,
+          // ProductMappingUrl+"/p/c/{category}",
+          // ProductMappingUrl+"/p/{page}/{maxProducts}",
+          // OrderMapping+"/request",
+          // OrderMapping+"/callback"
 
-          ).permitAll();
+          // ).permitAll();
+
+          
         }).exceptionHandling(e -> {
           e.accessDeniedHandler(DeniedHandler());
         });

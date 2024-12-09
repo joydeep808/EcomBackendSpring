@@ -1,8 +1,13 @@
 package com.oauth.ecom.services.redis;
 
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.Map.Entry;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.cache.CacheProperties.Redis;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.SessionCallback;
@@ -27,6 +32,7 @@ public class RedisService {
     try {
       
       redisTemplate.opsForValue().set( key, objectMapper.writeValueAsString(value));
+      
       redisTemplate.expire(key, Duration.ofSeconds(60));
       return true;
     } catch (Exception e) {
@@ -34,19 +40,25 @@ public class RedisService {
       return false;
     }
   }
-  public boolean saveInSingleQuery(String key , Object value , int expiration){
+ 
+  public <T> Set<Object> getMap(String key , Class<T> type) {
+    Set<Object> storedMap =  redisTemplate.opsForSet().members(key);
+    if (storedMap == null || storedMap.size() == 0) {
+      return null;
+    }
+    return storedMap;
+    
+}
+
+
+
+
+  public <T> boolean saveInSingleQuery(String key , T value , int expiration){
     try {
-      objectMapper.registerModule(new JavaTimeModule());
-      String JsonToString = objectMapper.writeValueAsString(value);
-      redisTemplate.execute(new SessionCallback<Object>(){
-        @SuppressWarnings("unchecked")
-        @Override
-        public Object execute(@SuppressWarnings("rawtypes") RedisOperations operations){
-          operations.opsForValue().set(key, JsonToString);
-          operations.expire(key, Duration.ofSeconds(expiration));
-          return null;
-        }
-      });
+      redisTemplate.multi();
+      redisTemplate.opsForSet().add(key, value);
+      redisTemplate.expire(key, Duration.ofSeconds(expiration));
+      redisTemplate.exec();
       return true;
     } catch (Exception e) {
       System.out.println(e.getLocalizedMessage());

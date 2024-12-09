@@ -43,4 +43,8 @@ public class RabbitMqConfig {
   public ObjectMapper objectMapper(){
     return new ObjectMapper();
   }
+  @Bean
+  public Queue couponCodeQueue(){
+    return new Queue(COUPON_CODE_QUEUE);
+  }
 }

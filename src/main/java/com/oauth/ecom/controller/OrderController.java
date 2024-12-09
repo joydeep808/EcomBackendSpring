@@ -1,18 +1,14 @@
 package com.oauth.ecom.controller;
 
-import java.util.Map;
-
+import java.util.*;
 import org.json.JSONObject;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
-import com.oauth.ecom.dto.order.RazorpayTransectionIdsDto;
+import com.oauth.ecom.dto.order.*;
 import com.oauth.ecom.entity.enumentity.PaymentType;
-import com.oauth.ecom.services.order.OrderService;
-import com.oauth.ecom.services.order.PaymentCallbackProcessor;
+import com.oauth.ecom.services.order.*;
 import com.oauth.ecom.services.payment.PaymentService;
-import com.oauth.ecom.util.JwtInterceptor;
 import com.oauth.ecom.util.ReqRes;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,22 +16,20 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/v1/order")
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RequiredArgsConstructor
 public class OrderController {
   private final PaymentService paymentService;
   private final OrderService orderService;
   private final PaymentCallbackProcessor paymentCallbackProcessor;
   // @Autowired KafkaService kafkaService;
-  @GetMapping(path = "/request", produces = MediaType.APPLICATION_JSON_VALUE)
-  public ResponseEntity<ReqRes> paymentRequest(HttpServletRequest httpServletRequest) throws Exception {
+  @GetMapping(path = "/request")
+  public ResponseEntity<ReqRes<PaymentRequestDto>> paymentRequest(HttpServletRequest httpServletRequest) throws Exception {
 
-    ReqRes paymentRequestDto = paymentService.paymentRequest(httpServletRequest);
-    return ResponseEntity.ok(paymentRequestDto);
+     return paymentService.paymentRequest(httpServletRequest);
   }
 
-  @PostMapping(path = "/callback", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-  public ResponseEntity<ReqRes> checkThePaymentCallback(@RequestParam Map<String, String> values,
+  @PostMapping(path = "/callback")
+  public ResponseEntity<ReqRes<Object>> checkThePaymentCallback(@RequestParam Map<String, String> values,
       HttpServletRequest request) throws Exception {
     return paymentCallbackProcessor.paymentCallbackProcessor(values, request);
   }
@@ -56,11 +50,9 @@ public class OrderController {
   }
 
   @GetMapping("/orders")
-  public ResponseEntity<ReqRes> getAllOrderedProducts(HttpServletRequest httpServletRequest,
+  public ResponseEntity<ReqRes<List<OrderDetailsSendDTO>>> getAllOrderedProducts(HttpServletRequest httpServletRequest,
       @RequestParam("page") Integer page) throws Exception {
-    ReqRes response = orderService.getAlltheOrders(httpServletRequest);
-    return response.getIsSuccess() ? ResponseEntity.status(response.getStatusCode()).body(response)
-        : ResponseEntity.status(response.getStatusCode()).body(response);
+    return orderService.getAlltheOrders(httpServletRequest);
   }
 
 }

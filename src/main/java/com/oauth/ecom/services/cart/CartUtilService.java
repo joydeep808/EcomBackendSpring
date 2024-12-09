@@ -22,7 +22,6 @@ public class CartUtilService {
     cart.setDiscountCartTotal(0);
     cartRepo.save(cart);
     cartItemsRepo.deleteCartItems(cart.getId());
-
   }
 
 }

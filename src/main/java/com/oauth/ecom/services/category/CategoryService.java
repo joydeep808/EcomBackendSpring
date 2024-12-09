@@ -3,15 +3,12 @@ package com.oauth.ecom.services.category;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import com.oauth.ecom.entity.Category;
-import com.oauth.ecom.entity.Products;
-import com.oauth.ecom.repository.CategoryRepo;
-import com.oauth.ecom.repository.ProductRepo;
+import com.oauth.ecom.entity.*;
+import com.oauth.ecom.repository.*;
 import com.oauth.ecom.util.ReqRes;
 
 @Service
@@ -21,77 +18,53 @@ public class CategoryService {
   @Autowired
   private ProductRepo productRepo;
 
-  public ReqRes createCategory(Category category) {
-    ReqRes response = new ReqRes();
+  public ResponseEntity<ReqRes<Category>> createCategory(Category category) {
+    ReqRes<Category> response = new ReqRes<>();
       Category FoundCategory = categoryRepo.findByName(category.getName());
       if (FoundCategory != null) {
-        response.sendErrorMessage(400, "Category already found");
+        return response.sendErrorMessage(400, "Category already found").sendResponseEntity();
       } else {
         category.setName(category.getName());
-        Category savedCategory = categoryRepo.save(category);
-        response.sendSuccessResponse(201, "Category saved successfully done", savedCategory);
-        response.setData(savedCategory);
+        categoryRepo.save(category);
+        return response.sendSuccessResponse(201, "Category saved successfully done").sendResponseEntity();
       }
-    return response;
   }
 
-  public ReqRes updateCategoryName(Long id, String name) {
-    ReqRes response = new ReqRes();
+  public ResponseEntity<ReqRes<Object>> updateCategoryName(Long id, String name) {
+    ReqRes<Object> response = new ReqRes<>();
 
-    try {
 
       Category checkNameAlreadyExist = categoryRepo.findByName(name);
       if (checkNameAlreadyExist != null) {
-        response.sendErrorMessage(400, "Category name already exist");
-        return response;
+       return  response.sendErrorMessage(400, "Category name already exist").sendResponseEntity();
       }
       Optional<Category> foundCategory = categoryRepo.findById(name);
       if (foundCategory.isPresent()) {
         foundCategory.get().setName(name);
         categoryRepo.save(foundCategory.get());
-        response.sendSuccessResponse(201, "Category name updated successfully done");
-        return response;
+       return  response.sendSuccessResponse(201, "Category name updated successfully done").sendResponseEntity();
       }
-      response.sendErrorMessage(404, "Category not found");
-      return response;
-    } catch (Exception e) {
-      response.setStatusCode(500);
-      response.setMessage("Server is not reachable");
-      response.setError(e.getLocalizedMessage());
-      return response;
-    }
+      return response.sendErrorMessage(404, "Category not found").sendResponseEntity();
 
   }
 
-  public ReqRes getCategoryProducts(String name, Integer pageNumber) {
+  public ResponseEntity<ReqRes<Page<Products>>> getCategoryProducts(String name, Integer pageNumber) {
 
-    ReqRes response = new ReqRes();
+    ReqRes<Page<Products>> response = new ReqRes<>();
 
-    try {
       Pageable pageable = PageRequest.of(pageNumber < 0 ? 0 : pageNumber - 1, 10);
       Category foundCategory = categoryRepo.findByName(name);
       if (foundCategory == null || foundCategory.equals(null)) {
-        response.setStatusCode(404);
-        response.setMessage("Category not found with this name");
+        return response.sendErrorMessage(404 , "Category not found with this name").sendResponseEntity();
       } else {
         Page<Products> products = productRepo.findProductsByCategoryId(foundCategory.getId(), pageable);
         if (products.isEmpty() || products.getTotalElements() == 0) {
-          response.setMessage("Products are not found with this category");
-          response.setStatusCode(200);
+         return  response.sendErrorMessage(404, "Products are not found with this category").sendResponseEntity();
         } else {
-          response.setMessage("Products found");
-          response.setStatusCode(200);
-          response.setIsSuccess(true);
-          response.setData(products);
+          return response.sendSuccessResponse(200 , "Products found"  , products).sendResponseEntity();
         }
       }
-    } catch (Exception e) {
-      response.setMessage("Server not reachable ");
-      response.setStatusCode(500);
-      response.setError(e.getLocalizedMessage());
 
-    }
-    return response;
-  }
+}
 
 }

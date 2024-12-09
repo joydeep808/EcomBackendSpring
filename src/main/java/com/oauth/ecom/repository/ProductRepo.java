@@ -11,19 +11,24 @@ import org.springframework.stereotype.Repository;
 
 import com.oauth.ecom.entity.Category;
 import com.oauth.ecom.entity.Products;
+import com.oauth.ecom.mappers.ProductMapper;
 @Repository
 public interface ProductRepo extends JpaRepository<Products , Object>{
   @Query(value = "select * from products where id =:id" , nativeQuery = true)
-  Products findByProductId(@Param("id")Long id);
+  Optional<ProductMapper> findByProductId(@Param("id")Long id);
   Products findByName(String name);
   @Query(value = "SELECT *  FROM products  WHERE category = :id ", nativeQuery = true)
   Page<Products> findProductsByCategoryId(@Param("id")Long id , Pageable pageable);
   @Query(value = "SELECT * FROM products WHERE name ~ :name", nativeQuery = true)
-  List<Products> findByNameRegex(@Param("name") String name);
+  List<ProductMapper> findByNameRegex(@Param("name") String name);
   
-  List<Products> findByCategory(Category category);
+  List<ProductMapper> findByCategory(Category category);
   
   @Query(value = "SELECT * from products WHERE id IN (:productsIds)" , nativeQuery = true)
   Optional<List<Products>> findByProductsIds(@Param("productsIds") List<Long> productsIds);
+
+
+  @Query(value = "SELECT * from products ORDER BY random()" , nativeQuery = true)
+  Page<ProductMapper> findAllProductsInRandom(Pageable pageable);
 
 }

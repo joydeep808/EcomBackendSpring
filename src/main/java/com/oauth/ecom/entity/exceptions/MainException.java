@@ -1,4 +1,4 @@
-package com.oauth.ecom.exceptions;
+package com.oauth.ecom.entity.exceptions;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
